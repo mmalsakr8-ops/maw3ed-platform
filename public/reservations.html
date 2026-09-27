@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الحجوزات | موعد</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+
+    header {
+      background: #0f172a;
+      color: #fff;
+      padding: 18px 20px;
+    }
+
+    .header-inner {
+      max-width: 1150px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .brand {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .brand span { color: #38bdf8; }
+
+    .back {
+      color: #fff;
+      text-decoration: none;
+      background: #1e293b;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1150px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .page-title h1 {
+      margin: 0 0 7px;
+      font-size: 28px;
+    }
+
+    .page-title p {
+      margin: 0 0 20px;
+      color: #64748b;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.06);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 180px 180px auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #d7dde5;
+      border-radius: 9px;
+      padding: 11px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .primary {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .muted {
+      background: #e5e7eb;
+      color: #475569;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+
+    th, td {
+      padding: 13px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: right;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f8fafc;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    .customer-name {
+      font-weight: bold;
+    }
+
+    .customer-phone {
+      color: #64748b;
+      margin-top: 4px;
+      direction: ltr;
+      text-align: right;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge.confirmed {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.completed {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge.cancelled,
+    .badge.rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+
+    .empty,
+    .loading {
+      text-align: center;
+      padding: 35px 15px;
+      color: #64748b;
+    }
+
+    .message {
+      display: none;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .message.show { display: block; }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .message.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: #fff;
+      border-radius: 12px;
+      padding: 17px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    }
+
+    .stat-label {
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 750px) {
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .back {
+        text-align: center;
+      }
+
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .page-title h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">موعد <span>MAW3ED</span></div>
+    <a class="back" href="/dashboard.html">← العودة للوحة التحكم</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-title">
+    <h1>الحجوزات</h1>
+    <p>تابع حجوزات مطعمك وقم بتأكيدها أو رفضها أو إنهائها.</p>
+  </div>
+
+  <div id="message" class="message"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">كل الحجوزات</div>
+      <div class="stat-value" id="statAll">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">قيد الانتظار</div>
+      <div class="stat-value" id="statPending">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">المؤكدة</div>
+      <div class="stat-value" id="statConfirmed">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">مكتملة</div>
+      <div class="stat-value" id="statCompleted">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <div class="filters">
+      <div>
+        <label for="dateFilter">التاريخ</label>
+        <input id="dateFilter" type="date">
+      </div>
+
+      <div>
+        <label for="statusFilter">الحالة</label>
+        <select id="statusFilter">
+          <option value="">كل الحالات</option>
+          <option value="pending">قيد الانتظار</option>
+          <option value="confirmed">مؤكد</option>
+          <option value="completed">مكتمل</option>
+          <option value="cancelled">ملغي</option>
+          <option value="rejected">مرفوض</option>
+        </select>
+      </div>
+
+      <button class="primary" onclick="loadReservations()">
+        تحديث الحجوزات
+      </button>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div id="reservationsContainer">
+      <div class="loading">جاري تحميل الحجوزات...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const message = document.getElementById("message");
+  const container = document.getElementById("reservationsContainer");
+
+  const statusNames = {
+    pending: "قيد الانتظار",
+    confirmed: "مؤكد",
+    completed: "مكتمل",
+    cancelled: "ملغي",
+    rejected: "مرفوض"
+  };
+
+  function showMessage(text, type = "ok") {
+    message.textContent = text;
+    message.className = "message show " + type;
+
+    setTimeout(() => {
+      message.className = "message";
+    }, 4000);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function getReservationsArray(data) {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.reservations)) return data.reservations;
+    return [];
+  }
+
+  function updateStats(reservations) {
+    document.getElementById("statAll").textContent =
+      reservations.length;
+
+    document.getElementById("statPending").textContent =
+      reservations.filter(x => x.status === "pending").length;
+
+    document.getElementById("statConfirmed").textContent =
+      reservations.filter(x => x.status === "confirmed").length;
+
+    document.getElementById("statCompleted").textContent =
+      reservations.filter(x => x.status === "completed").length;
+  }
+
+  async function loadReservations() {
+    container.innerHTML =
+      '<div class="loading">جاري تحميل الحجوزات...</div>';
+
+    try {
+      const meRes = await fetch("/api/me", {
+        credentials: "same-origin"
+      });
+
+      if (!meRes.ok) {
+        location.href = "/login.html";
+        return;
+      }
+
+      const params = new URLSearchParams();
+
+      const date = document.getElementById("dateFilter").value;
+      const status = document.getElementById("statusFilter").value;
+
+      if (date) params.set("date", date);
+      if (status) params.set("status", status);
+
+      const query = params.toString();
+
+      const res = await fetch(
+        "/api/reservations" + (query ? "?" + query : ""),
+        {
+          credentials: "same-origin"
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error || "تعذر تحميل الحجوزات"
+        );
+      }
+
+      const reservations = getReservationsArray(data);
+
+      updateStats(reservations);
+
+      if (!reservations.length) {
+        container.innerHTML = `
+          <div class="empty">
+            لا توجد حجوزات مطابقة للبحث.
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>العميل</th>
+                <th>التاريخ</th>
+                <th>الوقت</th>
+                <th>الأشخاص</th>
+                <th>الطاولة</th>
+                <th>ملاحظات</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      reservations.forEach(r => {
+        const status = r.status || "pending";
+        const statusText =
+          statusNames[status] || status;
+
+        html += `
+          <tr>
+
+            <td>
+              <div class="customer-name">
+                ${escapeHtml(r.customer_name)}
+              </div>
+              <div class="customer-phone">
+                ${escapeHtml(r.customer_phone)}
+              </div>
+            </td>
+
+            <td>
+              ${escapeHtml(r.reservation_date)}
+            </td>
+
+            <td>
+              ${escapeHtml(r.reservation_time)}
+            </td>
+
+            <td>
+              ${Number(r.party_size) || 0}
+            </td>
+
+            <td>
+              ${escapeHtml(r.table_name || "بدون تحديد")}
+            </td>
+
+            <td>
+              ${escapeHtml(r.notes || "-")}
+            </td>
+
+            <td>
+              <span class="badge ${escapeHtml(status)}">
+                ${escapeHtml(statusText)}
+              </span>
+            </td>
+
+            <td>
+              <div class="actions">
+
+                ${
+                  status === "pending"
+                    ? `
+                      <button
+                        class="success"
+                        onclick="changeStatus(${r.id}, 'confirmed')"
+                      >
+                        تأكيد
+                      </button>
+
+                      <button
+                        class="danger"
+                        onclick="changeStatus(${r.id}, 'rejected')"
+                      >
+                        رفض
+                      </button>
+                    `
+                    : ""
+                }
+
+                ${
+                  status === "confirmed"
+                    ? `
+                      <button
+                        class="primary"
+                        onclick="changeStatus(${r.id}, 'completed')"
+                      >
+                        مكتمل
+                      </button>
+
+                      <button
+                        class="danger"
+                        onclick="changeStatus(${r.id}, 'cancelled')"
+                      >
+                        إلغاء
+                      </button>
+                    `
+                    : ""
+                }
+
+              </div>
+            </td>
+
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+
+    } catch (err) {
+      container.innerHTML = `
+        <div class="empty">
+          ${escapeHtml(
+            err.message || "حدث خطأ أثناء تحميل الحجوزات"
+          )}
+        </div>
+      `;
+    }
+  }
+
+  async function changeStatus(id, status) {
+    const labels = {
+      confirmed: "تأكيد الحجز",
+      rejected: "رفض الحجز",
+      completed: "تسجيل الحجز كمكتمل",
+      cancelled: "إلغاء الحجز"
+    };
+
+    if (!confirm(
+      "هل تريد " +
+      (labels[status] || "تغيير حالة الحجز") +
+      "؟"
+    )) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "/api/reservations/" + id,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({ status })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error || "تعذر تغيير حالة الحجز"
+        );
+      }
+
+      showMessage("تم تحديث حالة الحجز بنجاح.");
+      await loadReservations();
+
+    } catch (err) {
+      showMessage(
+        err.message || "حدث خطأ",
+        "error"
+      );
+    }
+  }
+
+  document
+    .getElementById("dateFilter")
+    .addEventListener("change", loadReservations);
+
+  document
+    .getElementById("statusFilter")
+    .addEventListener("change", loadReservations);
+
+  loadReservations();
+</script>
+
+</body>
+</html>
