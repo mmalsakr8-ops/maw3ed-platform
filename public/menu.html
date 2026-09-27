@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المنيو | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f4f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: linear-gradient(135deg, #101b35, #263b72);
+      color: white;
+      padding: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      font-size: 23px;
+      font-weight: bold;
+    }
+
+    .back {
+      color: white;
+      text-decoration: none;
+      padding: 9px 13px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .top {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.06);
+    }
+
+    .top h1 {
+      margin: 0 0 7px;
+      font-size: 25px;
+    }
+
+    .top p {
+      margin: 0;
+      color: #707b91;
+      line-height: 1.7;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 17px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 17px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #617cff, #7b5cff);
+      color: white;
+    }
+
+    .secondary {
+      background: #eef1f6;
+      color: #46536b;
+    }
+
+    .danger {
+      background: #fff0f1;
+      color: #b4232f;
+    }
+
+    .section {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.06);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 17px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .category {
+      border: 1px solid #e4e8f0;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .category-head {
+      background: #f7f8fc;
+      padding: 14px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .category-name {
+      font-weight: bold;
+      font-size: 17px;
+    }
+
+    .category-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .small-btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    .items {
+      padding: 10px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 13px 8px;
+      border-bottom: 1px solid #edf0f5;
+    }
+
+    .item:last-child {
+      border-bottom: 0;
+    }
+
+    .item-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .item-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .item-description {
+      color: #7a8498;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .item-price {
+      font-weight: bold;
+      white-space: nowrap;
+      color: #4057c7;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 30px 15px;
+      color: #788399;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #69748b;
+    }
+
+    .error-box {
+      display: none;
+      background: #fff0f1;
+      color: #a7202b;
+      border: 1px solid #f2c9cd;
+      border-radius: 12px;
+      padding: 13px;
+      margin-bottom: 18px;
+    }
+
+    .notice {
+      display: none;
+      background: #fff6df;
+      color: #805900;
+      border: 1px solid #f0dfaa;
+      border-radius: 12px;
+      padding: 13px;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5,10,25,.65);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    .modal-box h3 {
+      margin: 0 0 20px;
+      font-size: 20px;
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #34405a;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d8deea;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      background: #fafbfe;
+    }
+
+    .field textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    .modal-message {
+      display: none;
+      margin-top: 13px;
+      padding: 10px;
+      border-radius: 9px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .modal-error {
+      display: block;
+      background: #fff0f1;
+      color: #a7202b;
+    }
+
+    @media (max-width: 650px) {
+      .item {
+        align-items: flex-start;
+      }
+
+      .item-actions {
+        flex-direction: column;
+      }
+
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .category-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">موعد</div>
+    <a class="back" href="/dashboard.html">← لوحة التحكم</a>
+  </div>
+</header>
+
+<main>
+
+  <div id="loading" class="loading">
+    جاري تحميل المنيو...
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+
+  <div id="content" style="display:none;">
+
+    <section class="top">
+      <h1>إدارة المنيو</h1>
+      <p id="restaurantName">منيو المطعم</p>
+
+      <div class="actions">
+        <button class="btn primary" onclick="openCategoryModal()">
+          + إضافة قسم
+        </button>
+
+        <button class="btn primary" onclick="openItemModal()">
+          + إضافة صنف
+        </button>
+
+        <a
+          id="publicMenuBtn"
+          class="btn secondary"
+          href="#"
+          target="_blank"
+          style="text-decoration:none;"
+        >
+          👁 مشاهدة المنيو
+        </a>
+      </div>
+    </section>
+
+    <div id="notice" class="notice"></div>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>أقسام المنيو والأصناف</h2>
+      </div>
+
+      <div id="categoriesContainer"></div>
+    </section>
+
+  </div>
+
+</main>
+
+<!-- Category Modal -->
+<div id="categoryModal" class="modal">
+  <div class="modal-box">
+
+    <h3 id="categoryModalTitle">إضافة قسم جديد</h3>
+
+    <form id="categoryForm">
+
+      <div class="field">
+        <label for="categoryName">اسم القسم *</label>
+        <input
+          id="categoryName"
+          type="text"
+          placeholder="مثال: المشروبات"
+          required
+        >
+      </div>
+
+      <div id="categoryMessage" class="modal-message"></div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="btn secondary"
+          onclick="closeCategoryModal()"
+        >
+          إلغاء
+        </button>
+
+        <button id="categorySaveBtn" type="submit" class="btn primary">
+          حفظ
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<!-- Item Modal -->
+<div id="itemModal" class="modal">
+  <div class="modal-box">
+
+    <h3>إضافة صنف جديد</h3>
+
+    <form id="itemForm">
+
+      <div class="field">
+        <label for="itemCategory">القسم *</label>
+
+        <select id="itemCategory" required>
+          <option value="">اختر القسم</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="itemName">اسم الصنف *</label>
+
+        <input
+          id="itemName"
+          type="text"
+          placeholder="مثال: برجر لحم"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="itemDescription">الوصف</label>
+
+        <textarea
+          id="itemDescription"
+          placeholder="وصف مختصر للصنف..."
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <label for="itemPrice">السعر *</label>
+
+        <input
+          id="itemPrice"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="مثال: 150"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="itemImage">رابط صورة الصنف</label>
+
+        <input
+          id="itemImage"
+          type="url"
+          placeholder="https://..."
+        >
+      </div>
+
+      <div id="itemMessage" class="modal-message"></div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="btn secondary"
+          onclick="closeItemModal()"
+        >
+          إلغاء
+        </button>
+
+        <button id="itemSaveBtn" type="submit" class="btn primary">
+          إضافة الصنف
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script>
+  let currentSite = null;
+  let categories = [];
+  let menuItems = [];
+
+  const loading = document.getElementById("loading");
+  const content = document.getElementById("content");
+  const errorBox = document.getElementById("errorBox");
+  const notice = document.getElementById("notice");
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function showError(message) {
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+  }
+
+  function showNotice(message) {
+    notice.textContent = message;
+    notice.style.display = "block";
+  }
+
+  function hideNotice() {
+    notice.style.display = "none";
+  }
+
+  async function getSite() {
+    const response = await fetch("/api/site", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        window.location.href = "/login.html";
+        return null;
+      }
+
+      throw new Error("تعذر تحميل بيانات المطعم");
+    }
+
+    const data = await response.json();
+
+    return data.site || data;
+  }
+
+  async function loadMenu() {
+    try {
+      const meResponse = await fetch("/api/me", {
+        credentials: "same-origin"
+      });
+
+      if (!meResponse.ok) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      currentSite = await getSite();
+
+      if (!currentSite) {
+        loading.style.display = "none";
+        content.style.display = "block";
+        showNotice("يجب إنشاء موقع المطعم أولًا من صفحة إعداد الموقع.");
+        return;
+      }
+
+      document.getElementById("restaurantName").textContent =
+        currentSite.name || "منيو المطعم";
+
+      if (currentSite.slug) {
+        document.getElementById("publicMenuBtn").href =
+          "/menu/" + encodeURIComponent(currentSite.slug);
+      }
+
+      await loadCategories();
+      await loadItems();
+
+      renderMenu();
+
+      loading.style.display = "none";
+      content.style.display = "block";
+
+    } catch (error) {
+      loading.style.display = "none";
+      showError(error.message || "تعذر تحميل المنيو");
+    }
+  }
+
+  async function loadCategories() {
+    const response = await fetch("/api/categories", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      throw new Error("تعذر تحميل أقسام المنيو");
+    }
+
+    const data = await response.json();
+
+    categories =
+      data.categories ||
+      (Array.isArray(data) ? data : []);
+  }
+
+  async function loadItems() {
+    /*
+      في النسخة الحالية من worker.js يوجد endpoint عام للمنيو،
+      لذلك نستخدمه بعد التأكد من وجود slug.
+    */
+
+    if (!currentSite || !currentSite.slug) {
+      menuItems = [];
+      return;
+    }
+
+    const response = await fetch(
+      "/api/public/menu/" + encodeURIComponent(currentSite.slug),
+      {
+        credentials: "same-origin"
+      }
+    );
+
+    if (!response.ok) {
+      menuItems = [];
+      return;
+    }
+
+    const data = await response.json();
+
+    const publicCategories =
+      data.categories ||
+      [];
+
+    const items = [];
+
+    for (const category of publicCategories) {
+      const categoryItems = category.items || [];
+
+      for (const item of categoryItems) {
+        items.push(item);
+      }
+    }
+
+    menuItems = items;
+  }
+
+  function renderMenu() {
+    const container =
+      document.getElementById("categoriesContainer");
+
+    if (!categories.length) {
+      container.innerHTML = `
+        <div class="empty">
+          لا توجد أقسام حتى الآن.
+          <br>
+          اضغط على "إضافة قسم" لبدء إنشاء المنيو.
+        </div>
+      `;
+
+      return;
+    }
+
+    container.innerHTML = categories.map(category => {
+
+      const items = menuItems.filter(item =>
+        String(item.category_id) === String(category.id)
+      );
+
+      return `
+        <div class="category">
+
+          <div class="category-head">
+
+            <div class="category-name">
+              ${escapeHtml(category.name)}
+            </div>
+
+            <div class="category-actions">
+
+              <button
+                class="small-btn secondary"
+                onclick="editCategory(${Number(category.id)})"
+              >
+                تعديل
+              </button>
+
+              <button
+                class="small-btn danger"
+                onclick="deleteCategory(${Number(category.id)})"
+              >
+                حذف
+              </button>
+
+            </div>
+
+          </div>
+
+          <div class="items">
+
+            ${
+              items.length
+                ? items.map(renderItem).join("")
+                : `
+                  <div class="empty">
+                    لا توجد أصناف في هذا القسم.
+                  </div>
+                `
+            }
+
+          </div>
+
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderItem(item) {
+    return `
+      <div class="item">
+
+        <div class="item-main">
+
+          <div class="item-name">
+            ${escapeHtml(item.name)}
+          </div>
+
+          ${
+            item.description
+              ? `
+                <div class="item-description">
+                  ${escapeHtml(item.description)}
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="item-price">
+          ${escapeHtml(item.price)} جنيه
+        </div>
+
+        <div class="item-actions">
+
+          <button
+            class="small-btn secondary"
+            onclick="editItem(${Number(item.id)})"
+          >
+            تعديل
+          </button>
+
+          <button
+            class="small-btn danger"
+            onclick="deleteItem(${Number(item.id)})"
+          >
+            حذف
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  }
+
+  function openCategoryModal() {
+    document.getElementById("categoryForm").reset();
+
+    document.getElementById("categoryModalTitle").textContent =
+      "إضافة قسم جديد";
+
+    document.getElementById("categoryMessage").className =
+      "modal-message";
+
+    document.getElementById("categoryModal").classList.add("show");
+  }
+
+  function closeCategoryModal() {
+    document.getElementById("categoryModal").classList.remove("show");
+  }
+
+  function openItemModal() {
+    if (!categories.length) {
+      alert("أضف قسمًا أولًا قبل إضافة الأصناف.");
+      return;
+    }
+
+    document.getElementById("itemForm").reset();
+
+    const select = document.getElementById("itemCategory");
+
+    select.innerHTML = `
+      <option value="">اختر القسم</option>
+      ${
+        categories.map(category => `
+          <option value="${Number(category.id)}">
+            ${escapeHtml(category.name)}
+          </option>
+        `).join("")
+      }
+    `;
+
+    document.getElementById("itemMessage").className =
+      "modal-message";
+
+    document.getElementById("itemModal").classList.add("show");
+  }
+
+  function closeItemModal() {
+    document.getElementById("itemModal").classList.remove("show");
+  }
+
+  document.getElementById("categoryForm").addEventListener(
+    "submit",
+    async (event) => {
+
+      event.preventDefault();
+
+      const name =
+        document.getElementById("categoryName").value.trim();
+
+      if (!name) {
+        return;
+      }
+
+      const button =
+        document.getElementById("categorySaveBtn");
+
+      button.disabled = true;
+      button.textContent = "جاري الحفظ...";
+
+      try {
+        const response = await fetch("/api/categories", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            name
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "تعذر إضافة القسم"
+          );
+        }
+
+        closeCategoryModal();
+
+        await loadCategories();
+        renderMenu();
+
+      } catch (error) {
+
+        const msg =
+          document.getElementById("categoryMessage");
+
+        msg.textContent =
+          error.message || "حدث خطأ";
+
+        msg.className =
+          "modal-message modal-error";
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "حفظ";
+      }
+    }
+  );
+
+  document.getElementById("itemForm").addEventListener(
+    "submit",
+    async (event) => {
+
+      event.preventDefault();
+
+      const category_id =
+        document.getElementById("itemCategory").value;
+
+      const name =
+        document.getElementById("itemName").value.trim();
+
+      const description =
+        document.getElementById("itemDescription").value.trim();
+
+      const price =
+        document.getElementById("itemPrice").value;
+
+      const image_url =
+        document.getElementById("itemImage").value.trim();
+
+      if (!category_id || !name || price === "") {
+        return;
+      }
+
+      const button =
+        document.getElementById("itemSaveBtn");
+
+      button.disabled = true;
+      button.textContent = "جاري الإضافة...";
+
+      try {
+        const response = await fetch("/api/menu-items", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            category_id: Number(category_id),
+            name,
+            description,
+            price: Number(price),
+            image_url
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "تعذر إضافة الصنف"
+          );
+        }
+
+        closeItemModal();
+
+        await loadItems();
+        renderMenu();
+
+      } catch (error) {
+
+        const msg =
+          document.getElementById("itemMessage");
+
+        msg.textContent =
+          error.message || "حدث خطأ";
+
+        msg.className =
+          "modal-message modal-error";
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "إضافة الصنف";
+      }
+    }
+  );
+
+  async function editCategory(id) {
+    const category =
+      categories.find(c => Number(c.id) === Number(id));
+
+    if (!category) {
+      return;
+    }
+
+    const newName =
+      prompt("اسم القسم الجديد:", category.name);
+
+    if (newName === null) {
+      return;
+    }
+
+    const name = newName.trim();
+
+    if (!name) {
+      alert("اسم القسم لا يمكن أن يكون فارغًا.");
+      return;
+    }
+
+    /*
+      تعديل الأقسام سيُفعّل في API الإدارة الكاملة
+      في الخطوة البرمجية التالية.
+    */
+
+    alert(
+      "تم تجهيز واجهة التعديل. سيتم تفعيل الحفظ الفعلي مع API التعديل."
+    );
+  }
+
+  async function deleteCategory(id) {
+    const category =
+      categories.find(c => Number(c.id) === Number(id));
+
+    if (!category) {
+      return;
+    }
+
+    const ok =
+      confirm(
+        'هل تريد حذف القسم "' +
+        category.name +
+        '"؟'
+      );
+
+    if (!ok) {
+      return;
+    }
+
+    /*
+      لا نحذف حاليًا لأن worker.js الحالي لا يحتوي
+      endpoint DELETE للأقسام، لتجنب حذف بيانات بالخطأ.
+    */
+
+    alert(
+      "حذف الأقسام سيتم تفعيله بعد إضافة endpoint الحذف في الـ Worker."
+    );
+  }
+
+  async function editItem(id) {
+    const item =
+      menuItems.find(i => Number(i.id) === Number(id));
+
+    if (!item) {
+      return;
+    }
+
+    alert(
+      "تعديل الأصناف سيتم تفعيله مع API التعديل في الخطوة التالية."
+    );
+  }
+
+  async function deleteItem(id) {
+    const item =
+      menuItems.find(i => Number(i.id) === Number(id));
+
+    if (!item) {
+      return;
+    }
+
+    const ok =
+      confirm(
+        'هل تريد حذف الصنف "' +
+        item.name +
+        '"؟'
+      );
+
+    if (!ok) {
+      return;
+    }
+
+    alert(
+      "حذف الأصناف سيتم تفعيله بعد إضافة endpoint الحذف في الـ Worker."
+    );
+  }
+
+  document.getElementById("categoryModal")
+    .addEventListener("click", (event) => {
+      if (event.target.id === "categoryModal") {
+        closeCategoryModal();
+      }
+    });
+
+  document.getElementById("itemModal")
+    .addEventListener("click", (event) => {
+      if (event.target.id === "itemModal") {
+        closeItemModal();
+      }
+    });
+
+  loadMenu();
+</script>
+
+</body>
+</html>
