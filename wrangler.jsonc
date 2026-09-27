@@ -1,0 +1,18 @@
+{
+  "name": "maw3ed-platform",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-27",
+  "observability": {
+    "enabled": false
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "maw3ed-db",
+      "database_id": "74a8e883-df12-40e7-98b1-a1f6246fb4fa"
+    }
+  ],
+  "assets": {
+    "directory": "./public"
+  }
+}
