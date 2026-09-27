@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="موعد MAW3ED - أنشئ موقع مطعمك ومنيوك ونظام الحجوزات في مكان واحد">
+  <title>موعد | MAW3ED</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #0b1020;
+      color: #f7f8fc;
+      line-height: 1.7;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11,16,32,.92);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: -.5px;
+    }
+
+    .brand span {
+      opacity: .55;
+      font-size: 13px;
+      margin-right: 7px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-links a {
+      padding: 9px 13px;
+      border-radius: 10px;
+      color: #cbd2e4;
+      font-size: 14px;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255,255,255,.06);
+      color: #fff;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 13px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .2s, opacity .2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: #635bff;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    .hero {
+      padding: 85px 0 70px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(99,91,255,.25), transparent 42%);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: rgba(99,91,255,.12);
+      border: 1px solid rgba(99,91,255,.3);
+      color: #b9b5ff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 0 auto 20px;
+      font-size: clamp(38px, 7vw, 72px);
+      line-height: 1.1;
+      letter-spacing: -2px;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: 0 auto 30px;
+      color: #aeb6ca;
+      font-size: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    section {
+      padding: 75px 0;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 42px;
+    }
+
+    .section-title h2 {
+      margin: 0 0 10px;
+      font-size: 34px;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: #929bb0;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 27px;
+      border-radius: 20px;
+      background: #12192b;
+      border: 1px solid rgba(255,255,255,.07);
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(99,91,255,.13);
+      font-size: 23px;
+      margin-bottom: 17px;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 0;
+      color: #9da6bb;
+      font-size: 14px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .step {
+      text-align: center;
+      padding: 24px 18px;
+    }
+
+    .number {
+      width: 45px;
+      height: 45px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 15px;
+      border-radius: 50%;
+      background: #635bff;
+      font-weight: 900;
+    }
+
+    .step h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+    }
+
+    .step p {
+      margin: 0;
+      color: #929bb0;
+      font-size: 13px;
+    }
+
+    .cta {
+      padding: 55px 25px;
+      text-align: center;
+      border-radius: 25px;
+      background:
+        linear-gradient(135deg, rgba(99,91,255,.18), rgba(255,255,255,.04));
+      border: 1px solid rgba(99,91,255,.2);
+    }
+
+    .cta h2 {
+      margin: 0 0 10px;
+      font-size: 32px;
+    }
+
+    .cta p {
+      margin: 0 auto 25px;
+      color: #a4adc1;
+    }
+
+    footer {
+      padding: 30px 0;
+      border-top: 1px solid rgba(255,255,255,.07);
+      color: #737d94;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 800px) {
+      .nav-links a:not(.btn) {
+        display: none;
+      }
+
+      .features,
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 65px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+    <a href="/" class="brand">
+      موعد <span>MAW3ED</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#features">المميزات</a>
+      <a href="#how">كيف يعمل؟</a>
+      <a href="/login.html">تسجيل الدخول</a>
+      <a href="/register.html" class="btn btn-primary">ابدأ الآن</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="container">
+
+      <div class="badge">
+        منصة واحدة لمطعمك
+      </div>
+
+      <h1>
+        موقع مطعمك،
+        <br>
+        منيوك وحجوزاتك
+        <br>
+        في مكان واحد
+      </h1>
+
+      <p>
+        مع موعد MAW3ED أنشئ صفحة احترافية لمطعمك،
+        أضف المنيو والأسعار والصور، واستقبل حجوزات العملاء
+        من خلال رابط مباشر وسهل المشاركة.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/register.html" class="btn btn-primary">
+          إنشاء حساب مجاني
+        </a>
+
+        <a href="#features" class="btn btn-secondary">
+          تعرف على المميزات
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+
+      <div class="section-title">
+        <h2>كل ما يحتاجه مطعمك</h2>
+        <p>منصة واحدة بدل استخدام عدة خدمات منفصلة</p>
+      </div>
+
+      <div class="features">
+
+        <article class="card">
+          <div class="icon">🏪</div>
+          <h3>موقع المطعم</h3>
+          <p>
+            أنشئ صفحة خاصة بمطعمك تحتوي على الاسم
+            والوصف والصور وبيانات التواصل والعنوان
+            ومواعيد العمل.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="icon">🍽️</div>
+          <h3>منيو احترافية</h3>
+          <p>
+            أضف أقسام المنيو والأصناف والأسعار والصور،
+            ويمكنك تعديل الاسم أو السعر في أي وقت.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="icon">📅</div>
+          <h3>نظام الحجوزات</h3>
+          <p>
+            استقبل حجوزات العملاء برابط مباشر،
+            مع تحديد التاريخ والوقت وعدد الأشخاص
+            والترابيزة المناسبة.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="icon">🪑</div>
+          <h3>إدارة الترابيزات</h3>
+          <p>
+            حدد اسم كل ترابيزة وسعتها، والنظام يساعد
+            على منع حجز نفس الترابيزة في نفس الموعد.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="icon">🔗</div>
+          <h3>رابط مباشر</h3>
+          <p>
+            لكل مطعم رابط خاص يمكن مشاركته على
+            واتساب وفيسبوك وإنستجرام وغيرها.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="icon">📱</div>
+          <h3>متوافق مع الهاتف</h3>
+          <p>
+            صفحات المطعم والمنيو والحجز مصممة لتعمل
+            بشكل مريح على الهاتف والكمبيوتر.
+          </p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+
+      <div class="section-title">
+        <h2>كيف يعمل موعد؟</h2>
+        <p>خطوات بسيطة للبدء</p>
+      </div>
+
+      <div class="steps">
+
+        <div class="step">
+          <div class="number">1</div>
+          <h3>أنشئ حسابك</h3>
+          <p>سجل بياناتك وأنشئ حساب صاحب المطعم.</p>
+        </div>
+
+        <div class="step">
+          <div class="number">2</div>
+          <h3>أنشئ مطعمك</h3>
+          <p>أدخل اسم المطعم وبياناته واختر التصميم.</p>
+        </div>
+
+        <div class="step">
+          <div class="number">3</div>
+          <h3>أضف المنيو</h3>
+          <p>أضف الأقسام والأصناف والأسعار والصور.</p>
+        </div>
+
+        <div class="step">
+          <div class="number">4</div>
+          <h3>استقبل الحجوزات</h3>
+          <p>شارك رابط الحجز وابدأ في استقبال العملاء.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+
+      <div class="cta">
+        <h2>جاهز تبدأ مطعمك على موعد؟</h2>
+
+        <p>
+          أنشئ حسابك وابدأ تجهيز موقع مطعمك ومنيوك.
+        </p>
+
+        <a href="/register.html" class="btn btn-primary">
+          ابدأ الآن
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    © 2026 MAW3ED — موعد
+  </div>
+</footer>
+
+</body>
+</html>
