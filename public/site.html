@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إعداد موقع المطعم | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f4f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: linear-gradient(135deg, #101b35, #263b72);
+      color: #fff;
+      padding: 18px;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .brand {
+      font-size: 23px;
+      font-weight: bold;
+    }
+
+    .back {
+      color: #fff;
+      text-decoration: none;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 9px 13px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.07);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .intro {
+      color: #707b91;
+      margin-bottom: 25px;
+      line-height: 1.7;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 25px 0 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e8ebf2;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .field {
+      margin-bottom: 5px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #34405a;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d8deea;
+      border-radius: 11px;
+      background: #fafbfe;
+      color: #172033;
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #718cff;
+      box-shadow: 0 0 0 3px rgba(113,140,255,.1);
+      background: #fff;
+    }
+
+    .slug-preview {
+      margin-top: 7px;
+      color: #78839a;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 14px 22px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .save {
+      flex: 1;
+      background: linear-gradient(135deg, #617cff, #7b5cff);
+      color: white;
+    }
+
+    .save:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .cancel {
+      background: #eef1f6;
+      color: #47536c;
+    }
+
+    .message {
+      display: none;
+      padding: 13px;
+      border-radius: 11px;
+      margin-top: 18px;
+      line-height: 1.6;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .success {
+      display: block;
+      background: #eaf8ee;
+      color: #19733a;
+      border: 1px solid #c8e8d1;
+    }
+
+    .error {
+      display: block;
+      background: #fff0f1;
+      color: #a7202b;
+      border: 1px solid #f2c9cd;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px 15px;
+      color: #69748b;
+    }
+
+    @media (max-width: 650px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .full {
+        grid-column: auto;
+      }
+
+      .buttons {
+        flex-direction: column;
+      }
+
+      .box {
+        padding: 20px 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">موعد</div>
+      <a class="back" href="/dashboard.html">← لوحة التحكم</a>
+    </div>
+  </header>
+
+  <main>
+
+    <div id="loading" class="loading">
+      جاري تحميل بيانات المطعم...
+    </div>
+
+    <div id="box" class="box" style="display:none;">
+
+      <h1>إعداد موقع المطعم</h1>
+
+      <div class="intro">
+        أدخل بيانات مطعمك. هذه البيانات ستظهر في موقع المطعم والمنيو والحجوزات.
+      </div>
+
+      <form id="siteForm">
+
+        <div class="section-title">بيانات المطعم</div>
+
+        <div class="grid">
+
+          <div class="field">
+            <label for="name">اسم المطعم *</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="مثال: مطعم السرايا"
+              required
+            >
+            <div class="slug-preview" id="slugPreview"></div>
+          </div>
+
+          <div class="field">
+            <label for="phone">رقم الهاتف</label>
+            <input
+              id="phone"
+              type="tel"
+              placeholder="01012345678"
+            >
+          </div>
+
+          <div class="field full">
+            <label for="address">العنوان</label>
+            <input
+              id="address"
+              type="text"
+              placeholder="عنوان المطعم بالتفصيل"
+            >
+          </div>
+
+          <div class="field full">
+            <label for="working_hours">مواعيد العمل</label>
+            <input
+              id="working_hours"
+              type="text"
+              placeholder="مثال: يوميًا من 10 صباحًا حتى 12 منتصف الليل"
+            >
+          </div>
+
+          <div class="field full">
+            <label for="description">وصف المطعم</label>
+            <textarea
+              id="description"
+              placeholder="اكتب نبذة قصيرة عن المطعم..."
+            ></textarea>
+          </div>
+
+        </div>
+
+        <div class="section-title">التصميم</div>
+
+        <div class="grid">
+
+          <div class="field">
+            <label for="design">التصميم</label>
+
+            <select id="design">
+              <option value="default">التصميم الافتراضي</option>
+              <option value="luxury">فاخر</option>
+              <option value="modern">عصري</option>
+              <option value="classic">كلاسيكي</option>
+              <option value="minimal">بسيط</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="buttons">
+          <button class="save" id="saveBtn" type="submit">
+            حفظ بيانات المطعم
+          </button>
+
+          <button
+            class="cancel"
+            type="button"
+            onclick="window.location.href='/dashboard.html'"
+          >
+            إلغاء
+          </button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+      </form>
+
+    </div>
+
+  </main>
+
+  <script>
+    const loading = document.getElementById("loading");
+    const box = document.getElementById("box");
+    const form = document.getElementById("siteForm");
+    const message = document.getElementById("message");
+    const saveBtn = document.getElementById("saveBtn");
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = "message " + type;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function makePreviewSlug(name) {
+      const text = String(name || "").trim();
+
+      if (!text) {
+        return "";
+      }
+
+      return "الرابط سيُنشأ تلقائيًا من اسم المطعم: " + text;
+    }
+
+    document.getElementById("name").addEventListener("input", (e) => {
+      document.getElementById("slugPreview").textContent =
+        makePreviewSlug(e.target.value);
+    });
+
+    async function loadSite() {
+      try {
+        const meResponse = await fetch("/api/me", {
+          credentials: "same-origin"
+        });
+
+        if (!meResponse.ok) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        const response = await fetch("/api/site", {
+          credentials: "same-origin"
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const site = data.site || data;
+
+          if (site) {
+            document.getElementById("name").value =
+              site.name || "";
+
+            document.getElementById("phone").value =
+              site.phone || "";
+
+            document.getElementById("address").value =
+              site.address || "";
+
+            document.getElementById("working_hours").value =
+              site.working_hours || "";
+
+            document.getElementById("description").value =
+              site.description || "";
+
+            document.getElementById("design").value =
+              site.design || "default";
+
+            document.getElementById("slugPreview").textContent =
+              makePreviewSlug(site.name);
+          }
+        }
+
+        loading.style.display = "none";
+        box.style.display = "block";
+
+      } catch (error) {
+        loading.style.display = "none";
+        box.style.display = "block";
+
+        showMessage(
+          "تعذر تحميل البيانات الحالية. يمكنك إدخال البيانات وحفظها.",
+          "error"
+        );
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      message.className = "message";
+      message.textContent = "";
+
+      const name = document.getElementById("name").value.trim();
+
+      if (!name) {
+        showMessage("اكتب اسم المطعم أولًا", "error");
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "جاري الحفظ...";
+
+      const payload = {
+        name,
+        phone: document.getElementById("phone").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        working_hours: document.getElementById("working_hours").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        design: document.getElementById("design").value
+      };
+
+      try {
+        const response = await fetch("/api/site", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "تعذر حفظ بيانات المطعم");
+        }
+
+        showMessage("تم حفظ بيانات المطعم بنجاح.", "success");
+
+        setTimeout(() => {
+          window.location.href = "/dashboard.html";
+        }, 900);
+
+      } catch (error) {
+        showMessage(
+          error.message || "حدث خطأ أثناء الحفظ",
+          "error"
+        );
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = "حفظ بيانات المطعم";
+      }
+    });
+
+    loadSite();
+  </script>
+
+</body>
+</html>
