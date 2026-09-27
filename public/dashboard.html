@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f4f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: linear-gradient(135deg, #101b35, #263b72);
+      color: white;
+      padding: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .brand {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .brand small {
+      display: block;
+      font-size: 11px;
+      color: #bfcaff;
+      margin-top: 3px;
+    }
+
+    .logout {
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.08);
+      color: white;
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .welcome {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.06);
+    }
+
+    .welcome h1 {
+      margin: 0 0 7px;
+      font-size: 25px;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: #68738a;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 7px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: #e8f7ed;
+      color: #19743a;
+    }
+
+    .status.expired {
+      background: #fdebec;
+      color: #b4232f;
+    }
+
+    .status.none {
+      background: #fff4dc;
+      color: #946200;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.06);
+    }
+
+    .card .label {
+      color: #78839a;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .section {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 25px rgba(20,30,60,.06);
+    }
+
+    .section h2 {
+      margin: 0 0 18px;
+      font-size: 20px;
+    }
+
+    .site-info {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .info {
+      background: #f7f8fc;
+      border-radius: 12px;
+      padding: 13px;
+    }
+
+    .info strong {
+      display: block;
+      font-size: 12px;
+      color: #7b8497;
+      margin-bottom: 5px;
+    }
+
+    .info span {
+      word-break: break-word;
+    }
+
+    .links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .link-btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eef1ff;
+      color: #4057c7;
+      font-weight: bold;
+    }
+
+    .link-btn:hover {
+      background: #e3e7ff;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 25px 10px;
+      color: #707b91;
+    }
+
+    .create-btn {
+      display: inline-block;
+      border: 0;
+      background: linear-gradient(135deg, #617cff, #7b5cff);
+      color: white;
+      padding: 13px 20px;
+      border-radius: 11px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #657089;
+    }
+
+    .error {
+      background: #fff0f1;
+      color: #a7202b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    @media (max-width: 800px) {
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .links {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 550px) {
+      .site-info {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .card .value {
+        font-size: 18px;
+      }
+
+      .welcome h1 {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        موعد
+        <small>MAW3ED</small>
+      </div>
+
+      <button class="logout" id="logoutBtn">
+        تسجيل الخروج
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <div id="loading" class="loading">
+      جاري تحميل لوحة التحكم...
+    </div>
+
+    <div id="errorBox" class="error"></div>
+
+    <div id="dashboard" style="display:none;">
+
+      <section class="welcome">
+        <h1 id="welcomeTitle">مرحبًا بك</h1>
+        <p id="welcomeText"></p>
+        <span id="statusBadge" class="status"></span>
+      </section>
+
+      <div class="cards">
+
+        <div class="card">
+          <div class="label">نوع الاشتراك</div>
+          <div class="value" id="subscriptionType">—</div>
+        </div>
+
+        <div class="card">
+          <div class="label">الأيام المتبقية</div>
+          <div class="value" id="daysRemaining">—</div>
+        </div>
+
+        <div class="card">
+          <div class="label">حالة الموقع</div>
+          <div class="value" id="siteStatus">—</div>
+        </div>
+
+        <div class="card">
+          <div class="label">الحجوزات</div>
+          <div class="value" id="reservationCount">—</div>
+        </div>
+
+      </div>
+
+      <section class="section">
+        <h2>معلومات المطعم</h2>
+
+        <div id="siteInfo" class="site-info"></div>
+
+        <div id="createSiteArea" style="display:none;">
+          <div class="empty">
+            لم يتم إنشاء موقع المطعم حتى الآن.
+            <br>
+            ابدأ بإنشاء موقعك الآن.
+            <br>
+            <button class="create-btn" onclick="createSite()">
+              إنشاء موقع المطعم
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="publicLinksSection" style="display:none;">
+        <h2>روابط المطعم</h2>
+
+        <div class="links">
+          <a id="siteLink" class="link-btn" target="_blank">
+            🌐 موقع المطعم
+          </a>
+
+          <a id="menuLink" class="link-btn" target="_blank">
+            📋 المنيو
+          </a>
+
+          <a id="bookingLink" class="link-btn" target="_blank">
+            📅 الحجز
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <script>
+    let currentUser = null;
+    let currentSite = null;
+
+    const loading = document.getElementById("loading");
+    const errorBox = document.getElementById("errorBox");
+    const dashboard = document.getElementById("dashboard");
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = "block";
+    }
+
+    function formatSubscription(type) {
+      const names = {
+        trial: "تجربة مجانية",
+        "3_months": "3 أشهر",
+        "1_year": "سنة",
+        permanent: "دائم"
+      };
+
+      return names[type] || type || "—";
+    }
+
+    function calculateDays(site) {
+      if (!site) return null;
+
+      if (site.subscription_type === "permanent") {
+        return "∞";
+      }
+
+      const end =
+        site.subscription_ends_at ||
+        site.trial_ends_at;
+
+      if (!end) return null;
+
+      const endDate = new Date(end);
+      const now = new Date();
+
+      const diff = endDate.getTime() - now.getTime();
+
+      return Math.max(0, Math.ceil(diff / 86400000));
+    }
+
+    function siteIsActive(site) {
+      if (!site) return false;
+
+      if (site.status !== "active") return false;
+
+      if (site.subscription_type === "permanent") {
+        return true;
+      }
+
+      const days = calculateDays(site);
+
+      return days !== null && days > 0;
+    }
+
+    function renderSite(site) {
+      currentSite = site;
+
+      if (!site) {
+        document.getElementById("subscriptionType").textContent = "—";
+        document.getElementById("daysRemaining").textContent = "—";
+        document.getElementById("siteStatus").textContent = "غير منشأ";
+
+        document.getElementById("reservationCount").textContent = "0";
+
+        document.getElementById("siteInfo").style.display = "none";
+        document.getElementById("createSiteArea").style.display = "block";
+
+        document.getElementById("publicLinksSection").style.display = "none";
+
+        const badge = document.getElementById("statusBadge");
+        badge.textContent = "لم يتم إنشاء الموقع";
+        badge.className = "status none";
+
+        return;
+      }
+
+      document.getElementById("siteInfo").style.display = "grid";
+      document.getElementById("createSiteArea").style.display = "none";
+
+      const active = siteIsActive(site);
+      const days = calculateDays(site);
+
+      document.getElementById("subscriptionType").textContent =
+        formatSubscription(site.subscription_type);
+
+      document.getElementById("daysRemaining").textContent =
+        days === null ? "—" : days;
+
+      document.getElementById("siteStatus").textContent =
+        active ? "نشط" : "متوقف";
+
+      const badge = document.getElementById("statusBadge");
+
+      if (active) {
+        badge.textContent = "الموقع نشط";
+        badge.className = "status";
+      } else {
+        badge.textContent = "الموقع متوقف";
+        badge.className = "status expired";
+      }
+
+      const info = document.getElementById("siteInfo");
+
+      info.innerHTML = `
+        <div class="info">
+          <strong>اسم المطعم</strong>
+          <span>${escapeHtml(site.name || "—")}</span>
+        </div>
+
+        <div class="info">
+          <strong>الرابط المختصر</strong>
+          <span>${escapeHtml(site.slug || "—")}</span>
+        </div>
+
+        <div class="info">
+          <strong>الهاتف</strong>
+          <span>${escapeHtml(site.phone || "—")}</span>
+        </div>
+
+        <div class="info">
+          <strong>العنوان</strong>
+          <span>${escapeHtml(site.address || "—")}</span>
+        </div>
+
+        <div class="info">
+          <strong>مواعيد العمل</strong>
+          <span>${escapeHtml(site.working_hours || "—")}</span>
+        </div>
+
+        <div class="info">
+          <strong>التصميم</strong>
+          <span>${escapeHtml(site.design || "افتراضي")}</span>
+        </div>
+      `;
+
+      if (site.slug) {
+        const siteUrl =
+          window.location.origin + "/r/" + encodeURIComponent(site.slug);
+
+        const menuUrl =
+          window.location.origin + "/menu/" + encodeURIComponent(site.slug);
+
+        const bookingUrl =
+          window.location.origin + "/book/" + encodeURIComponent(site.slug);
+
+        document.getElementById("siteLink").href = siteUrl;
+        document.getElementById("menuLink").href = menuUrl;
+        document.getElementById("bookingLink").href = bookingUrl;
+
+        document.getElementById("publicLinksSection").style.display = "block";
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function loadDashboard() {
+      try {
+        const meResponse = await fetch("/api/me", {
+          credentials: "same-origin"
+        });
+
+        if (!meResponse.ok) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        const me = await meResponse.json();
+        currentUser = me.user || me;
+
+        document.getElementById("welcomeTitle").textContent =
+          "مرحبًا " + (currentUser.name || "");
+
+        document.getElementById("welcomeText").textContent =
+          currentUser.email || currentUser.phone || "";
+
+        const siteResponse = await fetch("/api/site", {
+          credentials: "same-origin"
+        });
+
+        let site = null;
+
+        if (siteResponse.ok) {
+          const data = await siteResponse.json();
+
+          site = data.site || data;
+        }
+
+        renderSite(site);
+
+        try {
+          const reservationsResponse = await fetch("/api/reservations", {
+            credentials: "same-origin"
+          });
+
+          if (reservationsResponse.ok) {
+            const reservationData = await reservationsResponse.json();
+
+            const reservations =
+              reservationData.reservations ||
+              reservationData ||
+              [];
+
+            document.getElementById("reservationCount").textContent =
+              Array.isArray(reservations)
+                ? reservations.length
+                : "0";
+          }
+        } catch (_) {
+          document.getElementById("reservationCount").textContent = "0";
+        }
+
+        loading.style.display = "none";
+        dashboard.style.display = "block";
+
+      } catch (error) {
+        loading.style.display = "none";
+        showError("تعذر تحميل لوحة التحكم. حاول مرة أخرى.");
+      }
+    }
+
+    async function createSite() {
+      const name = prompt("اكتب اسم المطعم:");
+
+      if (!name || !name.trim()) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/site", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            name: name.trim()
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          alert(data.error || "تعذر إنشاء موقع المطعم");
+          return;
+        }
+
+        alert("تم إنشاء موقع المطعم بنجاح");
+
+        await loadDashboard();
+
+      } catch (error) {
+        alert("حدث خطأ أثناء إنشاء الموقع");
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "same-origin"
+        });
+      } finally {
+        window.location.href = "/login.html";
+      }
+    });
+
+    loadDashboard();
+  </script>
+
+</body>
+</html>
