@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الطاولات | موعد</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 18px 20px;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .brand {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .brand span {
+      color: #38bdf8;
+    }
+
+    .back {
+      color: white;
+      text-decoration: none;
+      background: #1e293b;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .page-title {
+      margin-bottom: 20px;
+    }
+
+    .page-title h1 {
+      margin: 0 0 7px;
+      font-size: 28px;
+    }
+
+    .page-title p {
+      margin: 0;
+      color: #64748b;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.06);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 180px auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #d7dde5;
+      border-radius: 9px;
+      padding: 12px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      border-color: #38bdf8;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 18px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .primary {
+      background: #0f172a;
+      color: white;
+    }
+
+    .primary:hover {
+      background: #1e293b;
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .message {
+      display: none;
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .message.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 15px;
+    }
+
+    .table-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 13px;
+      padding: 17px;
+      background: #fff;
+    }
+
+    .table-box.disabled {
+      opacity: .65;
+      background: #f8fafc;
+    }
+
+    .table-name {
+      font-size: 19px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .capacity {
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 13px;
+    }
+
+    .status.available {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status.disabled {
+      background: #e5e7eb;
+      color: #475569;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions button {
+      flex: 1;
+      font-size: 13px;
+      padding: 9px 7px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 35px 15px;
+      color: #64748b;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #64748b;
+    }
+
+    @media (max-width: 700px) {
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .back {
+        text-align: center;
+      }
+
+      .page-title h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">موعد <span>MAW3ED</span></div>
+    <a class="back" href="/dashboard.html">← العودة للوحة التحكم</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-title">
+    <h1>إدارة الطاولات</h1>
+    <p>أضف طاولات مطعمك وحدد عدد الأشخاص المناسب لكل طاولة.</p>
+  </div>
+
+  <div class="card">
+    <h2>إضافة طاولة جديدة</h2>
+
+    <form id="tableForm">
+
+      <div>
+        <label for="tableName">اسم الطاولة</label>
+        <input
+          id="tableName"
+          type="text"
+          placeholder="مثال: طاولة 1"
+          required
+        >
+      </div>
+
+      <div>
+        <label for="capacity">عدد الأشخاص</label>
+        <input
+          id="capacity"
+          type="number"
+          min="1"
+          max="100"
+          placeholder="4"
+          required
+        >
+      </div>
+
+      <button class="primary" type="submit">
+        + إضافة الطاولة
+      </button>
+
+    </form>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <div class="card">
+    <h2>طاولات المطعم</h2>
+
+    <div id="tablesContainer">
+      <div class="loading">جاري تحميل الطاولات...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const form = document.getElementById("tableForm");
+  const message = document.getElementById("message");
+  const container = document.getElementById("tablesContainer");
+
+  function showMessage(text, type = "ok") {
+    message.textContent = text;
+    message.className = "message show " + type;
+
+    setTimeout(() => {
+      message.className = "message";
+    }, 4000);
+  }
+
+  async function loadTables() {
+    container.innerHTML =
+      '<div class="loading">جاري تحميل الطاولات...</div>';
+
+    try {
+      const meRes = await fetch("/api/me", {
+        credentials: "same-origin"
+      });
+
+      if (!meRes.ok) {
+        location.href = "/login.html";
+        return;
+      }
+
+      const res = await fetch("/api/tables", {
+        credentials: "same-origin"
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "تعذر تحميل الطاولات");
+      }
+
+      const tables = Array.isArray(data) ? data : (data.tables || []);
+
+      if (!tables.length) {
+        container.innerHTML = `
+          <div class="empty">
+            لا توجد طاولات حتى الآن.<br>
+            أضف أول طاولة من النموذج بالأعلى.
+          </div>
+        `;
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "tables-grid";
+
+      tables.forEach(table => {
+
+        const box = document.createElement("div");
+        box.className =
+          "table-box " +
+          (table.status === "disabled" ? "disabled" : "");
+
+        const isDisabled = table.status === "disabled";
+
+        box.innerHTML = `
+          <div class="table-name">
+            ${escapeHtml(table.name)}
+          </div>
+
+          <div class="capacity">
+            👥 مناسبة لـ ${Number(table.capacity) || 0} أشخاص
+          </div>
+
+          <div class="status ${isDisabled ? "disabled" : "available"}">
+            ${isDisabled ? "معطلة" : "متاحة للحجز"}
+          </div>
+
+          <div class="actions">
+            <button
+              class="${isDisabled ? "success" : "danger"}"
+              onclick="toggleTable(${table.id}, '${isDisabled ? "available" : "disabled"}')"
+            >
+              ${isDisabled ? "تفعيل" : "تعطيل"}
+            </button>
+
+            <button
+              class="danger"
+              onclick="deleteTable(${table.id})"
+            >
+              حذف
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(box);
+      });
+
+      container.innerHTML = "";
+      container.appendChild(grid);
+
+    } catch (err) {
+      container.innerHTML = `
+        <div class="empty">
+          ${escapeHtml(err.message || "حدث خطأ أثناء تحميل الطاولات")}
+        </div>
+      `;
+    }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("tableName").value.trim();
+    const capacity = Number(
+      document.getElementById("capacity").value
+    );
+
+    if (!name) {
+      showMessage("اكتب اسم الطاولة.", "error");
+      return;
+    }
+
+    if (!capacity || capacity < 1) {
+      showMessage("اكتب عدد أشخاص صحيح.", "error");
+      return;
+    }
+
+    const submitButton = form.querySelector("button");
+    submitButton.disabled = true;
+    submitButton.textContent = "جاري الإضافة...";
+
+    try {
+      const res = await fetch("/api/tables", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          name,
+          capacity
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "تعذر إضافة الطاولة");
+      }
+
+      form.reset();
+
+      showMessage("تمت إضافة الطاولة بنجاح.");
+      await loadTables();
+
+    } catch (err) {
+      showMessage(
+        err.message || "حدث خطأ أثناء إضافة الطاولة",
+        "error"
+      );
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "+ إضافة الطاولة";
+    }
+  });
+
+  async function toggleTable(id, status) {
+    try {
+      const res = await fetch("/api/tables/" + id, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ status })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "تعذر تغيير حالة الطاولة");
+      }
+
+      showMessage(
+        status === "disabled"
+          ? "تم تعطيل الطاولة."
+          : "تم تفعيل الطاولة."
+      );
+
+      await loadTables();
+
+    } catch (err) {
+      showMessage(
+        err.message || "حدث خطأ",
+        "error"
+      );
+    }
+  }
+
+  async function deleteTable(id) {
+    if (!confirm("هل أنت متأكد من حذف هذه الطاولة؟")) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/tables/" + id, {
+        method: "DELETE",
+        credentials: "same-origin"
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "تعذر حذف الطاولة");
+      }
+
+      showMessage("تم حذف الطاولة.");
+      await loadTables();
+
+    } catch (err) {
+      showMessage(
+        err.message || "حدث خطأ أثناء الحذف",
+        "error"
+      );
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  loadTables();
+</script>
+
+</body>
+</html>
