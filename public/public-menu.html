@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المنيو | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f6f7f9;
+      color: #17202a;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .hero {
+      background:
+        linear-gradient(
+          rgba(15, 23, 42, .82),
+          rgba(15, 23, 42, .88)
+        ),
+        linear-gradient(135deg, #334155, #0f172a);
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      padding: 45px 20px 40px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #fff;
+      border: 3px solid rgba(255,255,255,.85);
+      margin-bottom: 15px;
+    }
+
+    .restaurant-name {
+      margin: 0 0 8px;
+      font-size: 34px;
+    }
+
+    .restaurant-description {
+      max-width: 650px;
+      margin: auto;
+      color: #cbd5e1;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .hero-actions a {
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+      background: rgba(255,255,255,.1);
+      padding: 10px 16px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 950px;
+      margin: auto;
+      padding: 25px 15px 40px;
+    }
+
+    .category {
+      margin-bottom: 32px;
+    }
+
+    .category-title {
+      text-align: center;
+      margin: 0 0 17px;
+      font-size: 24px;
+      position: relative;
+    }
+
+    .category-title::after {
+      content: "";
+      display: block;
+      width: 45px;
+      height: 3px;
+      background: #0f172a;
+      border-radius: 5px;
+      margin: 9px auto 0;
+    }
+
+    .items {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .item {
+      background: #fff;
+      border-radius: 13px;
+      overflow: hidden;
+      box-shadow: 0 3px 14px rgba(0,0,0,.06);
+      display: flex;
+      min-height: 125px;
+    }
+
+    .item-image {
+      width: 125px;
+      min-width: 125px;
+      height: 125px;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+
+    .item-content {
+      padding: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .item-name {
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    .item-description {
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .item-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .price {
+      font-weight: bold;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .unavailable {
+      font-size: 11px;
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 5px 8px;
+      border-radius: 20px;
+    }
+
+    .empty {
+      text-align: center;
+      background: #fff;
+      border-radius: 13px;
+      padding: 40px 20px;
+      color: #64748b;
+      box-shadow: 0 3px 14px rgba(0,0,0,.05);
+    }
+
+    .loading,
+    .error {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 25px;
+      color: #64748b;
+    }
+
+    .booking-box {
+      background: #0f172a;
+      color: #fff;
+      text-align: center;
+      border-radius: 15px;
+      padding: 30px 20px;
+      margin-top: 15px;
+    }
+
+    .booking-box h2 {
+      margin: 0 0 8px;
+    }
+
+    .booking-box p {
+      color: #cbd5e1;
+      margin: 0 0 20px;
+    }
+
+    .booking-button {
+      display: inline-block;
+      background: #fff;
+      color: #0f172a;
+      padding: 12px 22px;
+      border-radius: 9px;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      color: #94a3b8;
+      padding: 25px 15px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .items {
+        grid-template-columns: 1fr;
+      }
+
+      .restaurant-name {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .item-image {
+        width: 100px;
+        min-width: 100px;
+        height: 120px;
+      }
+
+      .item-content {
+        padding: 11px;
+      }
+
+      .item-name {
+        font-size: 15px;
+      }
+
+      .item-description {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="app">
+  <div class="loading">
+    جاري تحميل المنيو...
+  </div>
+</div>
+
+<script>
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function getSlug() {
+    const parts = location.pathname
+      .split("/")
+      .filter(Boolean);
+
+    /*
+      يدعم:
+      /menu/slug
+      /public-menu/slug
+      /public-menu.html?slug=slug
+    */
+
+    const menuIndex = parts.indexOf("menu");
+
+    if (
+      menuIndex !== -1 &&
+      parts[menuIndex + 1]
+    ) {
+      return parts[menuIndex + 1];
+    }
+
+    const publicMenuIndex =
+      parts.indexOf("public-menu");
+
+    if (
+      publicMenuIndex !== -1 &&
+      parts[publicMenuIndex + 1]
+    ) {
+      return parts[publicMenuIndex + 1];
+    }
+
+    const params =
+      new URLSearchParams(location.search);
+
+    return params.get("slug") || "";
+  }
+
+  function getCategories(data) {
+    if (Array.isArray(data.categories)) {
+      return data.categories;
+    }
+
+    if (Array.isArray(data.menu)) {
+      return data.menu;
+    }
+
+    return [];
+  }
+
+  function getItems(category) {
+    if (Array.isArray(category.items)) {
+      return category.items;
+    }
+
+    if (Array.isArray(category.menu_items)) {
+      return category.menu_items;
+    }
+
+    return [];
+  }
+
+  function money(value) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "";
+    }
+
+    const number = Number(value);
+
+    if (Number.isNaN(number)) {
+      return escapeHtml(value);
+    }
+
+    return number.toLocaleString("ar-EG") + " ج.م";
+  }
+
+  async function loadMenu() {
+    const app =
+      document.getElementById("app");
+
+    const slug = getSlug();
+
+    if (!slug) {
+      app.innerHTML = `
+        <div class="error">
+          رابط المنيو غير صحيح.
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "/api/public/menu/" +
+        encodeURIComponent(slug)
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error || "تعذر تحميل المنيو"
+        );
+      }
+
+      const site =
+        data.site || {};
+
+      const categories =
+        getCategories(data);
+
+      const restaurantName =
+        site.name ||
+        data.name ||
+        "المطعم";
+
+      const description =
+        site.description ||
+        "";
+
+      const logo =
+        site.logo_url ||
+        "";
+
+      let html = `
+        <header class="hero">
+
+          ${
+            logo
+              ? `
+                <img
+                  class="logo"
+                  src="${escapeHtml(logo)}"
+                  alt="${escapeHtml(restaurantName)}"
+                  onerror="this.style.display='none'"
+                >
+              `
+              : ""
+          }
+
+          <h1 class="restaurant-name">
+            ${escapeHtml(restaurantName)}
+          </h1>
+
+          ${
+            description
+              ? `
+                <div class="restaurant-description">
+                  ${escapeHtml(description)}
+                </div>
+              `
+              : ""
+          }
+
+          <div class="hero-actions">
+
+            <a href="/r/${encodeURIComponent(slug)}">
+              🏠 الرئيسية
+            </a>
+
+            <a href="/book/${encodeURIComponent(slug)}">
+              📅 احجز طاولة
+            </a>
+
+          </div>
+
+        </header>
+
+        <main class="container">
+      `;
+
+      if (!categories.length) {
+
+        html += `
+          <div class="empty">
+            <div style="font-size:35px;margin-bottom:10px;">
+              📋
+            </div>
+
+            المنيو غير مضافة حتى الآن.
+          </div>
+        `;
+
+      } else {
+
+        categories.forEach(category => {
+
+          const items =
+            getItems(category);
+
+          if (!items.length) {
+            return;
+          }
+
+          html += `
+            <section class="category">
+
+              <h2 class="category-title">
+                ${escapeHtml(category.name)}
+              </h2>
+
+              <div class="items">
+          `;
+
+          items.forEach(item => {
+
+            const available =
+              item.available === undefined ||
+              item.available === null ||
+              Number(item.available) === 1 ||
+              item.available === true;
+
+            const image =
+              item.image_url ||
+              "";
+
+            html += `
+              <article class="item">
+
+                ${
+                  image
+                    ? `
+                      <img
+                        class="item-image"
+                        src="${escapeHtml(image)}"
+                        alt="${escapeHtml(item.name)}"
+                        loading="lazy"
+                        onerror="this.style.display='none'"
+                      >
+                    `
+                    : `
+                      <div class="item-image"></div>
+                    `
+                }
+
+                <div class="item-content">
+
+                  <div class="item-name">
+                    ${escapeHtml(item.name)}
+                  </div>
+
+                  ${
+                    item.description
+                      ? `
+                        <div class="item-description">
+                          ${escapeHtml(item.description)}
+                        </div>
+                      `
+                      : `
+                        <div class="item-description"></div>
+                      `
+                  }
+
+                  <div class="item-bottom">
+
+                    <div class="price">
+                      ${money(item.price)}
+                    </div>
+
+                    ${
+                      !available
+                        ? `
+                          <span class="unavailable">
+                            غير متاح حاليًا
+                          </span>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+                </div>
+
+              </article>
+            `;
+          });
+
+          html += `
+              </div>
+            </section>
+          `;
+        });
+      }
+
+      html += `
+          <section class="booking-box">
+
+            <h2>
+              عايز تحجز طاولة؟
+            </h2>
+
+            <p>
+              احجز مكانك بسهولة من خلال موعد.
+            </p>
+
+            <a
+              class="booking-button"
+              href="/book/${encodeURIComponent(slug)}"
+            >
+              📅 احجز الآن
+            </a>
+
+          </section>
+
+        </main>
+
+        <footer>
+          مدعوم بواسطة موعد MAW3ED
+        </footer>
+      `;
+
+      app.innerHTML = html;
+
+      document.title =
+        "منيو " + restaurantName + " | موعد";
+
+    } catch (err) {
+
+      app.innerHTML = `
+        <div class="error">
+          <div>
+            <strong>
+              تعذر تحميل المنيو
+            </strong>
+
+            <br><br>
+
+            ${escapeHtml(
+              err.message ||
+              "حدث خطأ غير متوقع"
+            )}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  loadMenu();
+</script>
+
+</body>
+</html>
