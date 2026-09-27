@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المطعم | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f5f5f5;
+      color: #17202a;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .hero {
+      min-height: 420px;
+      background:
+        linear-gradient(
+          rgba(15, 23, 42, .78),
+          rgba(15, 23, 42, .78)
+        ),
+        linear-gradient(135deg, #334155, #0f172a);
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .hero-content {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .logo {
+      width: 105px;
+      height: 105px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #fff;
+      display: none;
+      margin: 0 auto 18px;
+      border: 4px solid rgba(255,255,255,.8);
+    }
+
+    .restaurant-name {
+      font-size: 42px;
+      font-weight: bold;
+      margin: 0 0 12px;
+    }
+
+    .description {
+      max-width: 650px;
+      margin: auto;
+      line-height: 1.9;
+      color: #e2e8f0;
+      font-size: 17px;
+    }
+
+    .hero-buttons {
+      margin-top: 25px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 13px 22px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .btn-primary {
+      background: #fff;
+      color: #0f172a;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 25px 15px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: -45px;
+      position: relative;
+    }
+
+    .info-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,.08);
+    }
+
+    .info-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .info-title {
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    .info-value {
+      color: #64748b;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .section {
+      margin-top: 35px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 27px;
+      margin-bottom: 18px;
+    }
+
+    .about {
+      background: #fff;
+      border-radius: 14px;
+      padding: 25px;
+      line-height: 2;
+      text-align: center;
+      color: #475569;
+      box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    }
+
+    .cta {
+      background: #0f172a;
+      color: #fff;
+      border-radius: 16px;
+      padding: 35px 20px;
+      text-align: center;
+      margin-top: 35px;
+    }
+
+    .cta h2 {
+      margin-top: 0;
+      font-size: 27px;
+    }
+
+    .cta p {
+      color: #cbd5e1;
+      margin-bottom: 22px;
+    }
+
+    .error,
+    .loading {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 25px;
+      font-size: 18px;
+      color: #64748b;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 15px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .restaurant-name {
+        font-size: 31px;
+      }
+
+      .description {
+        font-size: 15px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        margin-top: 20px;
+      }
+
+      .hero {
+        min-height: 400px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="app">
+  <div class="loading">
+    جاري تحميل بيانات المطعم...
+  </div>
+</div>
+
+<script>
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function getSlug() {
+    const parts = location.pathname
+      .split("/")
+      .filter(Boolean);
+
+    /*
+      يدعم:
+      /r/slug
+      /restaurant/slug
+      /restaurant.html?slug=slug
+    */
+
+    const rIndex = parts.indexOf("r");
+    if (rIndex !== -1 && parts[rIndex + 1]) {
+      return parts[rIndex + 1];
+    }
+
+    const restaurantIndex = parts.indexOf("restaurant");
+    if (
+      restaurantIndex !== -1 &&
+      parts[restaurantIndex + 1]
+    ) {
+      return parts[restaurantIndex + 1];
+    }
+
+    const params = new URLSearchParams(location.search);
+    return params.get("slug") || "";
+  }
+
+  function formatPhone(phone) {
+    if (!phone) return "غير مضاف";
+
+    const clean = String(phone).replace(/\s+/g, "");
+
+    return `
+      <a
+        href="tel:${encodeURIComponent(clean)}"
+        style="color:inherit"
+      >
+        ${escapeHtml(phone)}
+      </a>
+    `;
+  }
+
+  async function loadRestaurant() {
+    const app = document.getElementById("app");
+    const slug = getSlug();
+
+    if (!slug) {
+      app.innerHTML = `
+        <div class="error">
+          رابط المطعم غير صحيح.
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "/api/public/site/" +
+        encodeURIComponent(slug)
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error || "تعذر تحميل المطعم"
+        );
+      }
+
+      const site = data.site || data;
+
+      const name =
+        site.name || "المطعم";
+
+      const description =
+        site.description ||
+        "مرحبًا بكم في مطعمنا.";
+
+      const phone =
+        site.phone || "";
+
+      const address =
+        site.address ||
+        "العنوان غير مضاف";
+
+      const hours =
+        site.working_hours ||
+        "مواعيد العمل غير مضافة";
+
+      const logo =
+        site.logo_url || "";
+
+      const cover =
+        site.cover_url || "";
+
+      const design =
+        site.design || "default";
+
+      let heroBackground =
+        "linear-gradient(rgba(15,23,42,.78),rgba(15,23,42,.78)),linear-gradient(135deg,#334155,#0f172a)";
+
+      if (cover) {
+        heroBackground =
+          "linear-gradient(rgba(15,23,42,.62),rgba(15,23,42,.78)),url('" +
+          escapeHtml(cover) +
+          "')";
+      }
+
+      app.innerHTML = `
+        <section
+          class="hero"
+          style="
+            background-image:${heroBackground};
+          "
+        >
+          <div class="hero-content">
+
+            ${
+              logo
+                ? `
+                  <img
+                    class="logo"
+                    src="${escapeHtml(logo)}"
+                    alt="${escapeHtml(name)}"
+                    style="display:block"
+                    onerror="this.style.display='none'"
+                  >
+                `
+                : ""
+            }
+
+            <h1 class="restaurant-name">
+              ${escapeHtml(name)}
+            </h1>
+
+            <div class="description">
+              ${escapeHtml(description)}
+            </div>
+
+            <div class="hero-buttons">
+
+              <a
+                class="btn btn-primary"
+                href="/menu/${encodeURIComponent(slug)}"
+              >
+                📋 عرض المنيو
+              </a>
+
+              <a
+                class="btn btn-primary"
+                href="/book/${encodeURIComponent(slug)}"
+              >
+                📅 احجز طاولتك
+              </a>
+
+              ${
+                phone
+                  ? `
+                    <a
+                      class="btn btn-secondary"
+                      href="tel:${encodeURIComponent(phone)}"
+                    >
+                      📞 اتصل بنا
+                    </a>
+                  `
+                  : ""
+              }
+
+            </div>
+          </div>
+        </section>
+
+        <main class="container">
+
+          <section class="info-grid">
+
+            <div class="info-card">
+              <div class="info-icon">📍</div>
+              <div class="info-title">العنوان</div>
+              <div class="info-value">
+                ${escapeHtml(address)}
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">🕐</div>
+              <div class="info-title">مواعيد العمل</div>
+              <div class="info-value">
+                ${escapeHtml(hours)}
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">📞</div>
+              <div class="info-title">الهاتف</div>
+              <div class="info-value">
+                ${formatPhone(phone)}
+              </div>
+            </div>
+
+          </section>
+
+          <section class="section">
+
+            <h2 class="section-title">
+              عن المطعم
+            </h2>
+
+            <div class="about">
+              ${escapeHtml(description)}
+            </div>
+
+          </section>
+
+          <section class="cta">
+
+            <h2>
+              جاهز للحجز؟
+            </h2>
+
+            <p>
+              احجز طاولتك الآن واستمتع بوقتك معنا.
+            </p>
+
+            <a
+              class="btn btn-primary"
+              href="/book/${encodeURIComponent(slug)}"
+            >
+              📅 احجز الآن
+            </a>
+
+          </section>
+
+        </main>
+
+        <footer>
+          مدعوم بواسطة موعد MAW3ED
+        </footer>
+      `;
+
+      document.title =
+        name + " | موعد";
+
+    } catch (err) {
+      app.innerHTML = `
+        <div class="error">
+          <div>
+            <strong>تعذر تحميل بيانات المطعم</strong>
+            <br><br>
+            ${escapeHtml(
+              err.message || "حدث خطأ غير متوقع"
+            )}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  loadRestaurant();
+</script>
+
+</body>
+</html>
