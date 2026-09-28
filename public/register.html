@@ -105,7 +105,9 @@
       border-radius: 10px;
       text-align: center;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .error {
@@ -257,6 +259,20 @@
       message.className = "message " + type;
     }
 
+    async function readResponse(response) {
+      const contentType = response.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        return await response.json();
+      }
+
+      const text = await response.text();
+
+      return {
+        error: text || `HTTP ${response.status}`
+      };
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -269,13 +285,34 @@
       const password = document.getElementById("password").value;
       const password2 = document.getElementById("password2").value;
 
-      if (password !== password2) {
-        showMessage("كلمتا المرور غير متطابقتين", "error");
+      if (!name) {
+        showMessage("من فضلك اكتب الاسم", "error");
+        return;
+      }
+
+      if (!phone) {
+        showMessage("من فضلك اكتب رقم الهاتف", "error");
+        return;
+      }
+
+      if (!email) {
+        showMessage("من فضلك اكتب البريد الإلكتروني", "error");
         return;
       }
 
       if (password.length < 6) {
-        showMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل", "error");
+        showMessage(
+          "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+          "error"
+        );
+        return;
+      }
+
+      if (password !== password2) {
+        showMessage(
+          "كلمتا المرور غير متطابقتين",
+          "error"
+        );
         return;
       }
 
@@ -286,7 +323,8 @@
         const response = await fetch("/api/register", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
           },
           credentials: "same-origin",
           body: JSON.stringify({
@@ -297,10 +335,17 @@
           })
         });
 
-        const data = await response.json().catch(() => ({}));
+        const data = await readResponse(response);
+
+        console.log("REGISTER STATUS:", response.status);
+        console.log("REGISTER RESPONSE:", data);
 
         if (!response.ok) {
-          throw new Error(data.error || "تعذر إنشاء الحساب");
+          throw new Error(
+            data.error ||
+            data.message ||
+            `فشل إنشاء الحساب (HTTP ${response.status})`
+          );
         }
 
         showMessage(
@@ -313,8 +358,11 @@
         }, 800);
 
       } catch (error) {
+        console.error("REGISTER ERROR:", error);
+
         showMessage(
-          error.message || "حدث خطأ أثناء إنشاء الحساب",
+          error.message ||
+          "حدث خطأ أثناء إنشاء الحساب",
           "error"
         );
 
