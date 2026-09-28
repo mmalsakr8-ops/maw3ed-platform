@@ -2,9 +2,21 @@
   "name": "maw3ed-platform",
   "main": "worker.js",
   "compatibility_date": "2026-09-22",
+
   "observability": {
-    "enabled": false
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
   },
+
   "d1_databases": [
     {
       "binding": "DB",
@@ -12,6 +24,7 @@
       "database_id": "f8aad1bb-c725-42be-90bc-725d31a443b4"
     }
   ],
+
   "assets": {
     "directory": "./public"
   }
