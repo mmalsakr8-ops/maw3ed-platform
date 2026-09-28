@@ -77,7 +77,7 @@ async function hashPassword(password) {
     {
       name: "PBKDF2",
       salt: enc.encode(salt),
-      iterations: 120000,
+      iterations: 100000,
       hash: "SHA-256"
     },
     key,
@@ -108,7 +108,7 @@ async function verifyPassword(password, stored) {
     {
       name: "PBKDF2",
       salt: enc.encode(salt),
-      iterations: 120000,
+      iterations: 100000,
       hash: "SHA-256"
     },
     key,
