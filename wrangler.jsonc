@@ -1,7 +1,7 @@
 {
   "name": "maw3ed-platform",
   "main": "worker.js",
-  "compatibility_date": "2026-09-27",
+  "compatibility_date": "2026-09-22",
   "observability": {
     "enabled": false
   },
