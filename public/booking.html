@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حجز موعد | موعد</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Tahoma, sans-serif;
+      background: #f5f7fb;
+      color: #172033;
+    }
+
+    .container {
+      width: min(720px, calc(100% - 28px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111827, #1e3a5f);
+      color: white;
+      padding: 32px 0;
+      margin-bottom: 22px;
+    }
+
+    .hero-content {
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 20px;
+      background: rgba(255,255,255,.15);
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .description {
+      margin: 0;
+      opacity: .85;
+      line-height: 1.7;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.06);
+    }
+
+    .card h2 {
+      margin: 0 0 20px;
+      font-size: 21px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #d8dee9;
+      border-radius: 11px;
+      padding: 13px 14px;
+      font-size: 16px;
+      font-family: inherit;
+      background: white;
+      color: #172033;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .tables-box {
+      display: none;
+      margin-top: 5px;
+    }
+
+    .tables-box.show {
+      display: block;
+    }
+
+    .hint {
+      color: #667085;
+      font-size: 13px;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .message {
+      display: none;
+      padding: 14px;
+      border-radius: 11px;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .message.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .restaurant-info {
+      display: none;
+      text-align: center;
+      color: #667085;
+      margin-bottom: 18px;
+      line-height: 1.8;
+    }
+
+    .restaurant-info.show {
+      display: block;
+    }
+
+    .closed {
+      text-align: center;
+      padding: 35px 20px;
+    }
+
+    .closed-icon {
+      font-size: 50px;
+      margin-bottom: 12px;
+    }
+
+    .closed h2 {
+      margin: 0 0 10px;
+    }
+
+    .closed p {
+      color: #667085;
+      line-height: 1.8;
+      margin: 0;
+    }
+
+    .links {
+      text-align: center;
+      padding: 8px 0 28px;
+    }
+
+    .links a {
+      color: #2563eb;
+      text-decoration: none;
+      margin: 0 7px;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #667085;
+    }
+
+    @media (max-width: 600px) {
+      .row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .hero {
+        padding: 26px 0;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loading" class="loading">
+    جاري تحميل بيانات المطعم...
+  </div>
+
+  <div id="page" style="display:none;">
+
+    <section class="hero">
+      <div class="container hero-content">
+
+        <img id="logo" class="logo" alt="شعار المطعم">
+
+        <h1 id="restaurantName">المطعم</h1>
+
+        <p id="description" class="description"></p>
+
+      </div>
+    </section>
+
+    <main class="container">
+
+      <div id="restaurantInfo" class="restaurant-info"></div>
+
+      <div id="expiredBox" class="card closed" style="display:none;">
+        <div class="closed-icon">🔒</div>
+        <h2>الحجز غير متاح حاليًا</h2>
+        <p>
+          نظام الحجز غير متاح حاليًا لهذا المطعم.
+        </p>
+      </div>
+
+      <div id="bookingCard" class="card">
+
+        <h2>احجز طاولتك</h2>
+
+        <div id="message" class="message"></div>
+
+        <form id="bookingForm">
+
+          <div class="field">
+            <label for="customerName">الاسم *</label>
+            <input
+              id="customerName"
+              type="text"
+              required
+              maxlength="100"
+              placeholder="اكتب اسمك"
+            >
+          </div>
+
+          <div class="field">
+            <label for="customerPhone">رقم الهاتف *</label>
+            <input
+              id="customerPhone"
+              type="tel"
+              required
+              maxlength="30"
+              placeholder="مثال: 01000000000"
+            >
+          </div>
+
+          <div class="row">
+
+            <div class="field">
+              <label for="reservationDate">التاريخ *</label>
+              <input
+                id="reservationDate"
+                type="date"
+                required
+              >
+            </div>
+
+            <div class="field">
+              <label for="reservationTime">الوقت *</label>
+              <input
+                id="reservationTime"
+                type="time"
+                required
+              >
+            </div>
+
+          </div>
+
+          <div class="field">
+            <label for="partySize">عدد الأشخاص *</label>
+            <input
+              id="partySize"
+              type="number"
+              min="1"
+              max="100"
+              value="2"
+              required
+            >
+          </div>
+
+          <div id="tablesBox" class="tables-box field">
+
+            <label for="tableId">اختيار الطاولة</label>
+
+            <select id="tableId">
+              <option value="">بدون تحديد — يحدد المطعم الطاولة</option>
+            </select>
+
+            <div class="hint">
+              يمكنك اختيار الطاولة المناسبة حسب عدد الأشخاص.
+            </div>
+
+          </div>
+
+          <div class="field">
+
+            <label for="notes">ملاحظات</label>
+
+            <textarea
+              id="notes"
+              maxlength="500"
+              placeholder="أي ملاحظات خاصة بالحجز..."
+            ></textarea>
+
+          </div>
+
+          <button id="submitBtn" type="submit">
+            تأكيد طلب الحجز
+          </button>
+
+        </form>
+
+      </div>
+
+      <div class="links">
+        <a id="restaurantLink" href="#">المطعم</a>
+        <a id="menuLink" href="#">المنيو</a>
+      </div>
+
+    </main>
+
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  let slug = "";
+  let site = null;
+  let tables = [];
+
+  function getSlug() {
+    const path = window.location.pathname;
+
+    const match = path.match(/^\/(?:book|booking)\/([^/]+)\/?$/);
+
+    if (match) {
+      return decodeURIComponent(match[1]);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    return params.get("slug") || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function showMessage(text, type = "error") {
+    const box = $("message");
+
+    box.textContent = text;
+    box.className = "message show " + type;
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  function clearMessage() {
+    const box = $("message");
+
+    box.textContent = "";
+    box.className = "message";
+  }
+
+  function todayString() {
+    const d = new Date();
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function setMinimumDate() {
+    $("reservationDate").min = todayString();
+  }
+
+  async function loadSite() {
+    if (!slug) {
+      throw new Error("رابط المطعم غير صحيح.");
+    }
+
+    const response = await fetch(
+      "/api/public/site/" + encodeURIComponent(slug)
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.site) {
+      throw new Error(data.error || "المطعم غير موجود.");
+    }
+
+    site = data.site;
+
+    renderSite();
+  }
+
+  function renderSite() {
+
+    $("restaurantName").textContent =
+      site.name || "المطعم";
+
+    $("description").textContent =
+      site.description || "";
+
+    if (site.logo_url) {
+      $("logo").src = site.logo_url;
+      $("logo").style.display = "inline-block";
+    }
+
+    const info = [];
+
+    if (site.address) {
+      info.push("📍 " + site.address);
+    }
+
+    if (site.phone) {
+      info.push("📞 " + site.phone);
+    }
+
+    if (site.working_hours) {
+      info.push("🕐 " + site.working_hours);
+    }
+
+    if (info.length) {
+      $("restaurantInfo").innerHTML =
+        info.map(escapeHtml).join("<br>");
+
+      $("restaurantInfo").classList.add("show");
+    }
+
+    $("restaurantLink").href =
+      "/r/" + encodeURIComponent(slug);
+
+    $("menuLink").href =
+      "/menu/" + encodeURIComponent(slug);
+
+    if (site.design) {
+      applyDesign(site.design);
+    }
+
+    if (site.status === "suspended") {
+      showClosed();
+    }
+  }
+
+  function applyDesign(design) {
+
+    const root = document.documentElement;
+
+    if (design === "luxury") {
+      document.body.style.background = "#17120d";
+      document.body.style.color = "#f5e8cf";
+
+      document.querySelectorAll(".card").forEach(card => {
+        card.style.background = "#241c14";
+        card.style.color = "#f5e8cf";
+      });
+
+      document.querySelectorAll("input, select, textarea").forEach(el => {
+        el.style.background = "#17120d";
+        el.style.color = "#fff";
+        el.style.borderColor = "#6b5638";
+      });
+
+      $("restaurantInfo").style.color = "#d6c5a8";
+    }
+
+    if (design === "modern") {
+      document.body.style.background = "#eef2ff";
+    }
+
+    if (design === "classic") {
+      document.body.style.background = "#faf7f0";
+    }
+
+    if (design === "minimal") {
+      document.body.style.background = "#ffffff";
+    }
+  }
+
+  function showClosed() {
+    $("bookingCard").style.display = "none";
+    $("expiredBox").style.display = "block";
+  }
+
+  async function loadTables() {
+
+    try {
+
+      const response = await fetch(
+        "/api/tables?slug=" + encodeURIComponent(slug)
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data.tables)) {
+        return;
+      }
+
+      tables = data.tables.filter(
+        table => table.status !== "disabled"
+      );
+
+      renderTables();
+
+    } catch (error) {
+      console.log("Tables unavailable:", error);
+    }
+  }
+
+  function renderTables() {
+
+    if (!tables.length) {
+      $("tablesBox").classList.remove("show");
+      return;
+    }
+
+    $("tablesBox").classList.add("show");
+
+    const select = $("tableId");
+
+    select.innerHTML =
+      '<option value="">بدون تحديد — يحدد المطعم الطاولة</option>';
+
+    tables.forEach(table => {
+
+      const option = document.createElement("option");
+
+      option.value = table.id;
+
+      option.textContent =
+        `${table.name} — ${table.capacity} أشخاص`;
+
+      select.appendChild(option);
+    });
+  }
+
+  function filterTablesByPartySize() {
+
+    const partySize =
+      Number($("partySize").value || 0);
+
+    const select = $("tableId");
+
+    if (!tables.length) {
+      return;
+    }
+
+    select.innerHTML =
+      '<option value="">بدون تحديد — يحدد المطعم الطاولة</option>';
+
+    tables
+      .filter(table =>
+        Number(table.capacity) >= partySize &&
+        table.status !== "disabled"
+      )
+      .forEach(table => {
+
+        const option = document.createElement("option");
+
+        option.value = table.id;
+
+        option.textContent =
+          `${table.name} — ${table.capacity} أشخاص`;
+
+        select.appendChild(option);
+      });
+  }
+
+  async function submitBooking(event) {
+
+    event.preventDefault();
+
+    clearMessage();
+
+    const button = $("submitBtn");
+
+    const payload = {
+      customer_name: $("customerName").value.trim(),
+      customer_phone: $("customerPhone").value.trim(),
+      reservation_date: $("reservationDate").value,
+      reservation_time: $("reservationTime").value,
+      party_size: Number($("partySize").value),
+      table_id: $("tableId").value || null,
+      notes: $("notes").value.trim()
+    };
+
+    if (!payload.customer_name) {
+      showMessage("اكتب اسمك.");
+      return;
+    }
+
+    if (!payload.customer_phone) {
+      showMessage("اكتب رقم الهاتف.");
+      return;
+    }
+
+    if (!payload.reservation_date) {
+      showMessage("اختر تاريخ الحجز.");
+      return;
+    }
+
+    if (!payload.reservation_time) {
+      showMessage("اختر وقت الحجز.");
+      return;
+    }
+
+    if (!payload.party_size || payload.party_size < 1) {
+      showMessage("أدخل عدد الأشخاص بشكل صحيح.");
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "جاري إرسال طلب الحجز...";
+
+    try {
+
+      const response = await fetch(
+        "/api/book/" + encodeURIComponent(slug),
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "تعذر إرسال طلب الحجز."
+        );
+      }
+
+      showMessage(
+        "تم إرسال طلب الحجز بنجاح. حالة الحجز الآن: في انتظار تأكيد المطعم.",
+        "success"
+      );
+
+      $("bookingForm").reset();
+
+      $("partySize").value = 2;
+
+      setMinimumDate();
+
+      filterTablesByPartySize();
+
+    } catch (error) {
+
+      showMessage(
+        error.message || "حدث خطأ أثناء إرسال الحجز."
+      );
+
+    } finally {
+
+      button.disabled = false;
+      button.textContent = "تأكيد طلب الحجز";
+
+    }
+  }
+
+  async function init() {
+
+    slug = getSlug();
+
+    try {
+
+      await loadSite();
+
+      await loadTables();
+
+      setMinimumDate();
+
+      $("page").style.display = "block";
+      $("loading").style.display = "none";
+
+    } catch (error) {
+
+      $("loading").innerHTML = `
+        <div style="
+          max-width:600px;
+          margin:40px auto;
+          padding:25px;
+          background:white;
+          border-radius:18px;
+          box-shadow:0 8px 30px rgba(0,0,0,.06);
+        ">
+          <div style="font-size:45px;margin-bottom:10px;">⚠️</div>
+
+          <h2 style="margin:0 0 10px;">
+            تعذر فتح صفحة الحجز
+          </h2>
+
+          <p style="color:#667085;line-height:1.8;margin:0;">
+            ${escapeHtml(error.message)}
+          </p>
+        </div>
+      `;
+
+    }
+  }
+
+  $("bookingForm").addEventListener(
+    "submit",
+    submitBooking
+  );
+
+  $("partySize").addEventListener(
+    "input",
+    filterTablesByPartySize
+  );
+
+  init();
+</script>
+
+</body>
+</html>
