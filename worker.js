@@ -1,7 +1,6 @@
 const COOKIE_NAME = "maw3ed_session";
 const SESSION_DAYS = 30;
 const TRIAL_DAYS = 14;
-const SUPER_ADMIN_EMAIL = "mmalsakr8@gmail.com";
 
 const enc = new TextEncoder();
 
@@ -262,7 +261,7 @@ async function currentUser(request, env) {
         u.name,
         u.phone,
         u.email,
-        u.role,
+        CASE WHEN lower(u.email) = 'mmalsakr8@gmail.com' THEN 'admin' ELSE u.role END AS role,
         u.status,
         u.created_at
       FROM sessions s
@@ -274,11 +273,6 @@ async function currentUser(request, env) {
     `)
     .bind(tokenHash, nowISO())
     .first();
-
-  if (row && row.email === SUPER_ADMIN_EMAIL && row.role !== "super_admin") {
-    await env.DB.prepare("UPDATE users SET role = 'super_admin' WHERE id = ?").bind(row.id).run();
-    row.role = "super_admin";
-  }
 
   return row || null;
 }
@@ -391,9 +385,13 @@ async function register(request, env) {
     );
   }
 
+  const admin = await env.DB
+    .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
+    .first();
+
   const userId = randomToken(16);
   const passwordHash = await hashPassword(password);
-  const role = email === SUPER_ADMIN_EMAIL ? "super_admin" : "customer";
+  const role = admin ? "customer" : "admin";
 
   await env.DB
     .prepare(`
@@ -1768,7 +1766,7 @@ async function reservationsAPI(request, env, user, id = null) {
 async function requireAdmin(request, env) {
   const user = await requireUser(request, env);
 
-  if (user.role !== "admin" && user.role !== "super_admin") {
+  if (user.role !== "admin") {
     throw new Response(
       JSON.stringify({
         error: "غير مصرح"
@@ -2204,11 +2202,130 @@ async function apiRouter(request, env) {
 }
 
 /* =========================
+   DASHBOARD PAGE
+========================= */
+
+function dashboardPage() {
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>موعد MAW3ED | لوحة التحكم</title>
+<style>
+:root{--bg:#f5f1e9;--card:#fffdf9;--ink:#201c18;--muted:#756d63;--line:#e9e1d6;--accent:#b88345;--accent2:#8f6030;--dark:#211d19;--ok:#24734b;--danger:#b44336;--shadow:0 16px 45px rgba(35,27,18,.08)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Tahoma,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,253,249,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topin{width:min(1180px,calc(100% - 28px));margin:auto;height:72px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.brand{display:flex;align-items:center;gap:10px}.mark{width:42px;height:42px;border-radius:13px;background:var(--dark);color:#dcb47e;display:grid;place-items:center;font-size:22px;font-weight:900}.brand strong{font-size:20px}.brand small{display:block;color:var(--muted);font-size:10px;margin-top:2px;letter-spacing:1.6px}
+.menu-btn{border:1px solid var(--line);background:#fff;border-radius:13px;width:46px;height:46px;font-size:22px;color:var(--dark)}
+.wrap{width:min(1180px,calc(100% - 28px));margin:auto;padding:28px 0 70px}.hero{background:linear-gradient(135deg,#29231f,#171411);color:#fff;border-radius:28px;padding:28px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;background:rgba(216,176,111,.12);left:-80px;top:-100px}.hero .eyebrow{color:#dfbd8a;font-size:12px;font-weight:800}.hero h1{margin:8px 0 7px;font-size:32px}.hero p{margin:0;color:#ddd3c8;line-height:1.8}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.primary,.secondary{border:0;border-radius:14px;padding:12px 17px;font-weight:800}.primary{background:#d9ad70;color:#241d17}.secondary{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.16)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.stat{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:17px;box-shadow:0 8px 25px rgba(35,27,18,.04)}.stat span{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}.stat b{font-size:20px}.stat .ok{color:var(--ok)}.stat .bad{color:var(--danger)}
+.section{margin-top:22px}.section-title{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}.section-title h2{margin:0;font-size:21px}.section-title p{margin:0;color:var(--muted);font-size:12px}
+.actions{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.action{background:var(--card);border:1px solid var(--line);border-radius:19px;padding:18px;min-height:130px;transition:.2s;box-shadow:0 8px 25px rgba(35,27,18,.04)}.action:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.action .ico{font-size:27px}.action b{display:block;margin-top:12px}.action small{display:block;color:var(--muted);margin-top:5px;line-height:1.5}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 8px 25px rgba(35,27,18,.04)}.card h3{margin:0 0 7px}.muted{color:var(--muted);font-size:13px;line-height:1.7}.sitebox{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px;background:#f8f3eb;border-radius:16px;margin-top:15px}.site-name{font-size:18px;font-weight:900}.slug{color:var(--muted);font-size:12px;margin-top:4px;word-break:break-all}.open{background:var(--dark);color:#fff;border:0;border-radius:12px;padding:11px 14px;font-weight:800;white-space:nowrap}
+.empty{padding:28px 15px;text-align:center;border:1px dashed #d8cbbb;border-radius:18px;background:#fbf8f2}.empty .big{font-size:38px}.empty h3{margin:8px 0}.empty p{color:var(--muted);margin:0 0 16px;line-height:1.8}
+.form{display:grid;gap:10px;margin-top:15px}.form input,.form textarea,.form select{width:100%;border:1px solid #ded5c9;background:#fff;border-radius:13px;padding:12px 13px;outline:none}.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.1)}.form textarea{min-height:90px;resize:vertical}.msg{min-height:22px;margin-top:8px;font-size:13px}.msg.error{color:var(--danger)}.msg.ok{color:var(--ok)}
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:40;display:none}.drawer-bg.show{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;width:min(360px,88vw);background:#fffdf9;z-index:41;transform:translateX(105%);transition:.25s;padding:20px;box-shadow:-20px 0 50px rgba(0,0,0,.15);overflow:auto}.drawer.show{transform:translateX(0)}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.drawer-head h2{margin:0;font-size:20px}.close{border:1px solid var(--line);background:#fff;border-radius:11px;width:40px;height:40px}.nav{display:grid;gap:7px}.nav a,.nav button{border:0;background:#f7f3ec;border-radius:14px;padding:14px;text-align:right;color:var(--ink);font-weight:800}.nav a:hover,.nav button:hover{background:#eee5d8}.nav .admin{background:#211d19;color:#fff}.nav .logout{margin-top:8px;background:#f9e9e7;color:var(--danger)}
+.admin{margin-top:22px}.admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.admin-badge{font-size:11px;background:#eee2d1;color:#775126;padding:7px 10px;border-radius:999px;font-weight:800}.admin-list{display:grid;gap:10px;margin-top:14px}.admin-row{border:1px solid var(--line);border-radius:16px;padding:15px}.admin-row strong{font-size:16px}.admin-meta{color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px}.admin-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.admin-controls select,.admin-controls button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 10px}.admin-controls .renew{background:var(--dark);color:#fff}.admin-controls .suspend{color:var(--danger)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none;place-items:center;padding:16px}.modal-bg.show{display:grid}.modal{width:min(520px,100%);background:var(--card);border-radius:24px;padding:20px;box-shadow:0 25px 80px rgba(0,0,0,.2)}.modal-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.modal-head h3{margin:0}.modal-close{border:0;background:#f2ede5;border-radius:11px;width:40px;height:40px}.footer{text-align:center;color:#8c8378;font-size:11px;margin-top:28px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.actions{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:520px){.topin,.wrap{width:min(100% - 20px,1180px)}.topin{height:66px}.brand strong{font-size:18px}.hero{padding:22px;border-radius:23px}.hero h1{font-size:27px}.stats{grid-template-columns:repeat(2,1fr)}.stat{padding:14px}.actions{grid-template-columns:1fr 1fr}.action{min-height:120px;padding:15px}.sitebox{align-items:flex-start;flex-direction:column}.open{width:100%}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><button class="menu-btn" onclick="openDrawer()" aria-label="القائمة">☰</button><div class="brand"><div class="mark">م</div><div><strong>موعد MAW3ED</strong><small>RESTAURANT RESERVATIONS</small></div></div></div></header>
+
+<main class="wrap">
+<section class="hero">
+<div class="eyebrow">لوحة التحكم</div>
+<h1 id="welcome">أهلاً بك 👋</h1>
+<p>كل أدوات مطعمك في مكان واحد — الموقع، المنيو، الطاولات والحجوزات.</p>
+<div class="hero-actions"><button class="primary" onclick="document.getElementById('setup').scrollIntoView()">ابدأ إعداد مطعمك</button><button class="secondary" id="heroOpen" style="display:none" onclick="openSite()">🌐 فتح صفحة المطعم</button></div>
+</section>
+
+<section class="stats">
+<div class="stat"><span>حالة المطعم</span><b id="sStatus">—</b></div>
+<div class="stat"><span>الباقة</span><b id="sSub">—</b></div>
+<div class="stat"><span>الأيام المتبقية</span><b id="sDays">—</b></div>
+<div class="stat"><span>الحجوزات</span><b id="sBookings">—</b></div>
+</section>
+
+<section class="section"><div class="section-title"><div><h2>إدارة مطعمك</h2><p>اختصارات سريعة لأهم المهام</p></div></div>
+<div class="actions">
+<a class="action" href="#reservations"><span class="ico">📅</span><b>الحجوزات</b><small>تابع الطلبات وحدّث حالتها</small></a>
+<a class="action" href="#restaurant"><span class="ico">✏️</span><b>بيانات المطعم</b><small>عدّل الاسم والهاتف والعنوان</small></a>
+<a class="action" href="#menu"><span class="ico">📋</span><b>المنيو</b><small>الأقسام والأصناف والأسعار</small></a>
+<a class="action" href="#tables"><span class="ico">🪑</span><b>الطاولات</b><small>السعة وحالة كل طاولة</small></a>
+<a class="action" href="#share"><span class="ico">🔗</span><b>صفحة المطعم</b><small>شارك الرابط مع عملائك</small></a>
+</div></section>
+
+<section class="section grid" id="setup">
+<div class="card" id="restaurant"><h3>🏪 بيانات المطعم</h3><div class="muted" id="restaurantHint">أنشئ بيانات مطعمك مرة واحدة، وبعدها تقدر تعدّلها في أي وقت.</div><div id="siteView"></div><form class="form" id="siteForm" style="display:none" onsubmit="saveSite(event)"><input id="fName" placeholder="اسم المطعم" required><input id="fPhone" placeholder="رقم الهاتف"><input id="fAddress" placeholder="العنوان"><input id="fHours" placeholder="مواعيد العمل"><textarea id="fDesc" placeholder="نبذة قصيرة عن المطعم"></textarea><input id="fLogo" placeholder="رابط الشعار (اختياري)"><button class="open" type="submit">حفظ بيانات المطعم</button><div id="siteMsg" class="msg"></div></form></div>
+<div class="card" id="share"><h3>🌐 صفحة المطعم</h3><div class="muted">هذا هو الرابط الذي سيصل إليه العملاء لحجز طاولة.</div><div class="sitebox"><div><div class="site-name" id="shareName">—</div><div class="slug" id="shareUrl">لم يتم إنشاء المطعم بعد</div></div><button class="open" id="copyBtn" style="display:none" onclick="copyUrl()">نسخ الرابط</button></div><button class="open" id="shareOpen" style="display:none;margin-top:10px;width:100%" onclick="openSite()">فتح صفحة المطعم</button></div>
+</section>
+
+<section class="section grid">
+<div class="card" id="tables"><h3>🪑 الطاولات</h3><div class="muted">أضف الطاولات وحدد عدد الأشخاص لكل طاولة.</div><form class="form" onsubmit="addTable(event)"><input id="tableName" placeholder="مثال: طاولة 1" required><input id="tableCap" type="number" min="1" max="100" value="4" placeholder="السعة"><button class="open" type="submit">+ إضافة طاولة</button></form><div id="tablesList" class="admin-list"></div></div>
+<div class="card" id="menu"><h3>📋 المنيو</h3><div class="muted">أضف الأقسام والأصناف من هنا، وستظهر للعميل داخل صفحة المطعم.</div><div class="sitebox"><div><div class="site-name">إدارة المنيو</div><div class="slug">الأقسام والأصناف والأسعار</div></div><button class="open" onclick="showMenuInfo()">فتح الإدارة</button></div><div id="menuInfo" class="muted" style="margin-top:12px"></div></div>
+</section>
+
+<section class="section"><div class="card" id="reservations"><div class="section-title"><div><h3>📅 الحجوزات</h3><p>آخر الحجوزات المسجلة على مطعمك</p></div></div><div id="reservationsList" class="muted">جاري تحميل الحجوزات...</div></div></section>
+
+<section class="section admin" id="adminSection" style="display:none"><div class="card"><div class="admin-head"><div><h3>🛡️ إدارة المنصة</h3><div class="muted">من نفس لوحة التحكم تقدر تدير المطاعم والاشتراكات.</div></div><span class="admin-badge">SUPER ADMIN</span></div><div id="adminList" class="admin-list">جاري تحميل المطاعم...</div></div></section>
+<div class="footer">موعد MAW3ED — إدارة المطعم والحجوزات بسهولة</div>
+</main>
+
+<div class="drawer-bg" id="drawerBg" onclick="closeDrawer()"></div><aside class="drawer" id="drawer"><div class="drawer-head"><h2>القائمة الرئيسية</h2><button class="close" onclick="closeDrawer()">×</button></div><div class="nav"><a href="#setup" onclick="closeDrawer()">🏠 الرئيسية</a><a href="#restaurant" onclick="closeDrawer()">🏪 المطعم</a><a href="#menu" onclick="closeDrawer()">📋 المنيو</a><a href="#tables" onclick="closeDrawer()">🪑 الطاولات</a><a href="#reservations" onclick="closeDrawer()">📅 الحجوزات</a><a href="#share" onclick="closeDrawer()">🌐 صفحة المطعم</a><button id="adminNav" class="admin" style="display:none" onclick="closeDrawer();document.getElementById('adminSection').scrollIntoView()">🛡️ إدارة المنصة</button><button class="logout" onclick="logout()">🚪 تسجيل الخروج</button></div></aside>
+
+<div class="modal-bg" id="modal"><div class="modal"><div class="modal-head"><h3 id="modalTitle">تنبيه</h3><button class="modal-close" onclick="closeModal()">×</button></div><div id="modalBody" class="muted" style="margin-top:12px"></div></div></div>
+<script>
+let ME=null,SITE=null,BASE=location.origin;
+const $=id=>document.getElementById(id);
+function openDrawer(){$('drawer').classList.add('show');$('drawerBg').classList.add('show')}function closeDrawer(){$('drawer').classList.remove('show');$('drawerBg').classList.remove('show')}
+function modal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').classList.add('show')}function closeModal(){$('modal').classList.remove('show')}
+async function api(url,opt={}){const r=await fetch(url,{credentials:'same-origin',...opt,headers:{'content-type':'application/json',...(opt.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d.error||'تعذر تنفيذ الطلب');return d}
+function statusText(s){return s==='active'?'يعمل':s==='suspended'?'موقوف':'غير متاح'}
+function subText(s){if(!s)return '—';return s==='trial'?'تجربة مجانية':s==='3_months'?'3 شهور':s==='1_year'?'سنة':s==='permanent'?'دائم':'—'}
+function openSite(){if(SITE?.slug)location.href=BASE+'/restaurant/'+encodeURIComponent(SITE.slug)}
+function copyUrl(){if(!SITE?.slug)return;const u=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);navigator.clipboard?.writeText(u).then(()=>{ $('copyBtn').textContent='تم النسخ ✓';setTimeout(()=>$('copyBtn').textContent='نسخ الرابط',1400)}).catch(()=>modal('رابط المطعم','<div style="word-break:break-all">'+u+'</div>'))}
+function renderSite(){
+ if(!SITE){$('siteView').innerHTML='<div class="empty"><div class="big">🍽️</div><h3>مطعمك لسه ما اتعملش</h3><p>ابدأ بإنشاء مطعمك، وبعدها هتقدر تضيف المنيو والطاولات وتستقبل الحجوزات.</p><button class="open" onclick="startCreate()">إنشاء مطعمي الآن</button></div>';$('siteForm').style.display='none';$('shareName').textContent='—';$('shareUrl').textContent='لم يتم إنشاء المطعم بعد';$('copyBtn').style.display='none';$('shareOpen').style.display='none';$('heroOpen').style.display='none';return}
+ $('siteView').innerHTML='<div class="sitebox"><div><div class="site-name">'+esc(SITE.name)+'</div><div class="slug">/'+esc(SITE.slug)+'</div></div><button class="open" onclick="editSite()">✏️ تعديل</button></div>';$('siteForm').style.display='none';$('shareName').textContent=SITE.name;$('shareUrl').textContent=BASE+'/restaurant/'+SITE.slug;$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
+ $('fName').value=SITE.name||'';$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function startCreate(){ $('siteForm').style.display='grid'; $('fName').focus(); $('restaurantHint').textContent='اكتب اسم المطعم واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';document.getElementById('restaurant').scrollIntoView({behavior:'smooth'}) }
+function editSite(){ $('siteForm').style.display='grid';$('restaurantHint').textContent='عدّل البيانات ثم اضغط حفظ. الرابط المختصر يتحدث تلقائيًا إذا تغيّر اسم المطعم.';document.getElementById('restaurant').scrollIntoView({behavior:'smooth'}) }
+async function saveSite(e){e.preventDefault();const msg=$('siteMsg');msg.className='msg';msg.textContent='جارٍ الحفظ...';try{const body={name:$('fName').value,phone:$('fPhone').value,address:$('fAddress').value,working_hours:$('fHours').value,description:$('fDesc').value,logo_url:$('fLogo').value};const d=await api('/api/site',{method:SITE?'PUT':'POST',body:JSON.stringify(body)});SITE=d.site;msg.className='msg ok';msg.textContent='تم حفظ بيانات المطعم بنجاح ✓';renderSite();await refresh();setTimeout(()=>{msg.textContent=''},1800)}catch(err){msg.className='msg error';msg.textContent=err.message}}
+async function addTable(e){e.preventDefault();if(!SITE)return modal('أنشئ المطعم أولاً','أنشئ مطعمك ثم أضف الطاولات.');try{await api('/api/tables',{method:'POST',body:JSON.stringify({name:$('tableName').value,capacity:Number($('tableCap').value)})});$('tableName').value='';await loadTables()}catch(err){modal('تعذر إضافة الطاولة',esc(err.message))}}
+async function loadTables(){if(!SITE){$('tablesList').innerHTML='<div class="muted">أنشئ المطعم أولاً.</div>';return}try{const d=await api('/api/tables');if(!d.tables?.length){$('tablesList').innerHTML='<div class="muted">لا توجد طاولات حتى الآن.</div>';return}$('tablesList').innerHTML=d.tables.map(t=>'<div class="admin-row"><strong>🪑 '+esc(t.name)+'</strong><div class="admin-meta">السعة: '+t.capacity+' أشخاص · الحالة: '+(t.status==='available'?'متاحة':'غير متاحة')+'</div></div>').join('')}catch(err){$('tablesList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}}
+async function loadReservations(){if(!SITE){$('reservationsList').innerHTML='أنشئ المطعم أولاً.';return}try{const d=await api('/api/reservations');const rows=d.reservations||[];$('sBookings').textContent=rows.length?String(rows.length):'0';if(!rows.length){$('reservationsList').innerHTML='<div class="empty"><div class="big">📅</div><h3>لسه مفيش حجوزات</h3><p>أول ما العملاء يبدأوا الحجز، هتظهر الطلبات هنا.</p></div>';return}$('reservationsList').innerHTML=rows.slice(0,12).map(r=>'<div class="admin-row"><strong>'+esc(r.customer_name)+'</strong><div class="admin-meta">'+esc(r.reservation_date)+' · '+esc(r.reservation_time)+' · '+r.party_size+' أشخاص · '+esc(r.table_name||'طاولة تلقائية')+'<br>الهاتف: '+esc(r.customer_phone)+'</div><div class="admin-controls"><select onchange="changeReservation(\''+r.id+'\',this.value)"><option value="pending" '+(r.status==='pending'?'selected':'')+'>قيد المراجعة</option><option value="confirmed" '+(r.status==='confirmed'?'selected':'')+'>مؤكد</option><option value="completed" '+(r.status==='completed'?'selected':'')+'>مكتمل</option><option value="cancelled" '+(r.status==='cancelled'?'selected':'')+'>ملغي</option><option value="rejected" '+(r.status==='rejected'?'selected':'')+'>مرفوض</option></select></div></div>').join('')}catch(err){$('reservationsList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}}
+async function changeReservation(id,status){try{await api('/api/reservations/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({status})});await loadReservations()}catch(err){modal('تعذر تحديث الحجز',esc(err.message))}}
+function showMenuInfo(){if(!SITE){modal('المنيو','أنشئ مطعمك أولاً، وبعدها نفتح لك إدارة الأقسام والأصناف.');return}modal('إدارة المنيو','المنيو مرتبطة بمطعمك وجاهزة للربط مع صفحة المطعم. تقدر تضيف الأقسام والأصناف من لوحة المنيو عند تجهيز واجهة المنيو.');}
+async function loadAdmin(){if(ME?.role!=='admin')return;$('adminSection').style.display='block';$('adminNav').style.display='block';try{const d=await api('/api/admin/sites');const rows=d.sites||[];if(!rows.length){$('adminList').innerHTML='<div class="muted">لا توجد مطاعم مسجلة حتى الآن.</div>';return}$('adminList').innerHTML=rows.map(s=>'<div class="admin-row"><strong>🏪 '+esc(s.name)+'</strong><div class="admin-meta">صاحب المطعم: '+esc(s.owner_name||'—')+'<br>البريد: '+esc(s.owner_email||'—')+'<br>الحالة: '+esc(statusText(s.status))+' · الاشتراك: '+esc(subText(s.subscription_type))+' · الأيام: '+(s.subscription_type==='permanent'?'∞':(s.days_left??'—'))+'</div><div class="admin-controls"><select id="sub-'+s.id+'"><option value="3_months">3 شهور</option><option value="1_year">سنة</option><option value="permanent">دائم</option></select><button class="renew" onclick="renewSite(\''+s.id+'\')">تجديد</button><button class="suspend" onclick="toggleSite(\''+s.id+'\',\''+(s.status==='active'?'suspended':'active')+'\')">'+(s.status==='active'?'إيقاف':'تشغيل')+'</button></div></div>').join('')}catch(err){$('adminList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}}
+async function renewSite(id){try{const type=$('sub-'+id).value;await api('/api/admin/site/'+encodeURIComponent(id)+'/renew',{method:'POST',body:JSON.stringify({subscription_type:type})});await loadAdmin();modal('تم التجديد','تم تحديث اشتراك المطعم بنجاح ✓')}catch(err){modal('تعذر التجديد',esc(err.message))}}
+async function toggleSite(id,status){try{await api('/api/admin/site/'+encodeURIComponent(id)+'/status',{method:'POST',body:JSON.stringify({status})});await loadAdmin()}catch(err){modal('تعذر تغيير الحالة',esc(err.message))}}
+function refreshStats(){if(!SITE){$('sStatus').textContent='لم يبدأ بعد';$('sStatus').className='';$('sSub').textContent='—';$('sDays').textContent='—';return}const expired=SITE.expired===true;$('sStatus').textContent=expired?'غير متاح':statusText(SITE.status);$('sStatus').className=expired?'bad':'ok';$('sSub').textContent=subText(SITE.subscription_type);$('sDays').textContent=SITE.days_left===null?'∞':String(SITE.days_left??0)}
+async function refresh(){try{const d=await api('/api/me');ME=d.user;SITE=d.site; $('welcome').textContent='أهلاً بك، '+(ME.name||'')+' 👋';renderSite();refreshStats();await Promise.all([loadTables(),loadReservations()]);if(ME.role==='admin')await loadAdmin()}catch(err){if(err.message.includes('الدخول'))location.href='/login';else modal('حدث خطأ',esc(err.message))}}
+async function logout(){try{await api('/api/logout',{method:'POST'});location.href='/login'}catch{location.href='/login'}}
+refresh();
+</script>
+</body></html>`;
+}
+
+/* =========================
    STATIC ROUTES
 ========================= */
 
 async function staticRequest(request, env) {
   const url = new URL(request.url);
+
+  if (request.method === "GET" && url.pathname === "/dashboard") {
+    const user = await currentUser(request, env);
+    if (!user) return redirect("/login");
+    return html(dashboardPage());
+  }
 
   if (request.method !== "GET") {
     return env.ASSETS.fetch(request);
@@ -2293,141 +2410,12 @@ async function staticRequest(request, env) {
 }
 
 /* =========================
-   DATABASE COMPATIBILITY
-========================= */
-
-async function ensureColumn(db, table, column, definition) {
-  const info = await db.prepare(`PRAGMA table_info(${table})`).all();
-  const exists = (info.results || []).some(x => x.name === column);
-  if (!exists) {
-    await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
-  }
-}
-
-async function ensureSchema(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'customer',
-    status TEXT NOT NULL DEFAULT 'active',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS sessions (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    token_hash TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS sites (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    phone TEXT DEFAULT '',
-    address TEXT DEFAULT '',
-    working_hours TEXT DEFAULT '',
-    description TEXT DEFAULT '',
-    logo_url TEXT DEFAULT '',
-    cover_url TEXT DEFAULT '',
-    design TEXT DEFAULT 'default',
-    status TEXT NOT NULL DEFAULT 'active',
-    trial_started_at TEXT,
-    trial_ends_at TEXT,
-    subscription_type TEXT DEFAULT 'trial',
-    subscription_ends_at TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS categories (
-    id TEXT PRIMARY KEY,
-    site_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS menu_items (
-    id TEXT PRIMARY KEY,
-    site_id TEXT NOT NULL,
-    category_id TEXT,
-    name TEXT NOT NULL,
-    description TEXT DEFAULT '',
-    price REAL DEFAULT 0,
-    image_url TEXT DEFAULT '',
-    available INTEGER NOT NULL DEFAULT 1,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS restaurant_tables (
-    id TEXT PRIMARY KEY,
-    site_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    capacity INTEGER NOT NULL DEFAULT 2,
-    status TEXT NOT NULL DEFAULT 'available',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS reservations (
-    id TEXT PRIMARY KEY,
-    site_id TEXT NOT NULL,
-    table_id TEXT,
-    customer_name TEXT NOT NULL,
-    customer_phone TEXT NOT NULL,
-    reservation_date TEXT NOT NULL,
-    reservation_time TEXT NOT NULL,
-    party_size INTEGER NOT NULL,
-    notes TEXT DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  await db.prepare(`CREATE TABLE IF NOT EXISTS qr_codes (
-    id TEXT PRIMARY KEY,
-    site_id TEXT NOT NULL,
-    code TEXT,
-    url TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-
-  // Compatibility with the D1 database already created before this version.
-  await ensureColumn(db, 'users', 'status', "TEXT NOT NULL DEFAULT 'active'");
-  await ensureColumn(db, 'sites', 'user_id', "TEXT");
-  await ensureColumn(db, 'sites', 'phone', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'address', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'working_hours', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'description', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'logo_url', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'cover_url', "TEXT DEFAULT ''");
-  await ensureColumn(db, 'sites', 'design', "TEXT DEFAULT 'default'");
-  await ensureColumn(db, 'sites', 'status', "TEXT NOT NULL DEFAULT 'active'");
-  await ensureColumn(db, 'sites', 'trial_started_at', "TEXT");
-  await ensureColumn(db, 'sites', 'trial_ends_at', "TEXT");
-  await ensureColumn(db, 'sites', 'subscription_type', "TEXT DEFAULT 'trial'");
-  await ensureColumn(db, 'sites', 'subscription_ends_at', "TEXT");
-  await ensureColumn(db, 'sites', 'created_at', "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
-  await ensureColumn(db, 'sites', 'updated_at', "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
-}
-
-/* =========================
    FETCH
 ========================= */
 
 export default {
   async fetch(request, env) {
     try {
-      await ensureSchema(env.DB);
       const url = new URL(request.url);
 
       if (url.pathname === "/health") {
