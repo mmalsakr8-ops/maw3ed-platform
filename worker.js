@@ -1,6 +1,7 @@
 const COOKIE_NAME = "maw3ed_session";
 const SESSION_DAYS = 30;
 const TRIAL_DAYS = 14;
+const SUPER_ADMIN_EMAIL = "mmalsakr8@gmail.com";
 
 const enc = new TextEncoder();
 
@@ -274,6 +275,11 @@ async function currentUser(request, env) {
     .bind(tokenHash, nowISO())
     .first();
 
+  if (row && row.email === SUPER_ADMIN_EMAIL && row.role !== "super_admin") {
+    await env.DB.prepare("UPDATE users SET role = 'super_admin' WHERE id = ?").bind(row.id).run();
+    row.role = "super_admin";
+  }
+
   return row || null;
 }
 
@@ -385,13 +391,9 @@ async function register(request, env) {
     );
   }
 
-  const admin = await env.DB
-    .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
-    .first();
-
   const userId = randomToken(16);
   const passwordHash = await hashPassword(password);
-  const role = admin ? "customer" : "admin";
+  const role = email === SUPER_ADMIN_EMAIL ? "super_admin" : "customer";
 
   await env.DB
     .prepare(`
@@ -1766,7 +1768,7 @@ async function reservationsAPI(request, env, user, id = null) {
 async function requireAdmin(request, env) {
   const user = await requireUser(request, env);
 
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "super_admin") {
     throw new Response(
       JSON.stringify({
         error: "غير مصرح"
@@ -2291,12 +2293,141 @@ async function staticRequest(request, env) {
 }
 
 /* =========================
+   DATABASE COMPATIBILITY
+========================= */
+
+async function ensureColumn(db, table, column, definition) {
+  const info = await db.prepare(`PRAGMA table_info(${table})`).all();
+  const exists = (info.results || []).some(x => x.name === column);
+  if (!exists) {
+    await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+  }
+}
+
+async function ensureSchema(db) {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'customer',
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS sites (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    phone TEXT DEFAULT '',
+    address TEXT DEFAULT '',
+    working_hours TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    logo_url TEXT DEFAULT '',
+    cover_url TEXT DEFAULT '',
+    design TEXT DEFAULT 'default',
+    status TEXT NOT NULL DEFAULT 'active',
+    trial_started_at TEXT,
+    trial_ends_at TEXT,
+    subscription_type TEXT DEFAULT 'trial',
+    subscription_ends_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS menu_items (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    category_id TEXT,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    price REAL DEFAULT 0,
+    image_url TEXT DEFAULT '',
+    available INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS restaurant_tables (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    capacity INTEGER NOT NULL DEFAULT 2,
+    status TEXT NOT NULL DEFAULT 'available',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS reservations (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    table_id TEXT,
+    customer_name TEXT NOT NULL,
+    customer_phone TEXT NOT NULL,
+    reservation_date TEXT NOT NULL,
+    reservation_time TEXT NOT NULL,
+    party_size INTEGER NOT NULL,
+    notes TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  await db.prepare(`CREATE TABLE IF NOT EXISTS qr_codes (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    code TEXT,
+    url TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  // Compatibility with the D1 database already created before this version.
+  await ensureColumn(db, 'users', 'status', "TEXT NOT NULL DEFAULT 'active'");
+  await ensureColumn(db, 'sites', 'user_id', "TEXT");
+  await ensureColumn(db, 'sites', 'phone', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'address', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'working_hours', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'description', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'logo_url', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'cover_url', "TEXT DEFAULT ''");
+  await ensureColumn(db, 'sites', 'design', "TEXT DEFAULT 'default'");
+  await ensureColumn(db, 'sites', 'status', "TEXT NOT NULL DEFAULT 'active'");
+  await ensureColumn(db, 'sites', 'trial_started_at', "TEXT");
+  await ensureColumn(db, 'sites', 'trial_ends_at', "TEXT");
+  await ensureColumn(db, 'sites', 'subscription_type', "TEXT DEFAULT 'trial'");
+  await ensureColumn(db, 'sites', 'subscription_ends_at', "TEXT");
+  await ensureColumn(db, 'sites', 'created_at', "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+  await ensureColumn(db, 'sites', 'updated_at', "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+}
+
+/* =========================
    FETCH
 ========================= */
 
 export default {
   async fetch(request, env) {
     try {
+      await ensureSchema(env.DB);
       const url = new URL(request.url);
 
       if (url.pathname === "/health") {
