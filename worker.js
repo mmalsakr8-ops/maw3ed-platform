@@ -2361,9 +2361,9 @@ export default {
       return json(
         {
           error: "حدث خطأ داخلي",
-          detail: String(
-            error?.message || error
-          )
+          detail: String(error?.message || error),
+          name: String(error?.name || ""),
+          stack: String(error?.stack || "")
         },
         500
       );
