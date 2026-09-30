@@ -303,11 +303,20 @@ async function ensureSiteColumns(env) {
     ["cover_url", "TEXT DEFAULT ''"],
     ["design", "TEXT DEFAULT 'default'"]
   ];
+
   const info = await env.DB.prepare("PRAGMA table_info(sites)").all();
   const columns = new Set((info.results || []).map(r => r.name));
+
   for (const [name, definition] of required) {
-    if (!columns.has(name)) {
+    if (columns.has(name)) continue;
+    try {
       await env.DB.prepare(`ALTER TABLE sites ADD COLUMN ${name} ${definition}`).run();
+    } catch (error) {
+      // Another request may have added the column at the same time.
+      // Re-check before failing the API request.
+      const check = await env.DB.prepare("PRAGMA table_info(sites)").all();
+      const names = new Set((check.results || []).map(r => r.name));
+      if (!names.has(name)) throw error;
     }
   }
 }
@@ -2540,7 +2549,7 @@ async function saveSite(e){
     const body={name:$('fName').value.trim(),business_type:selectedBusinessType,phone:$('fPhone').value.trim(),address:$('fAddress').value.trim(),working_hours:$('fHours').value.trim(),description:$('fDesc').value.trim(),logo_url:$('fLogo').value.trim(),cover_url:$('fCover').value.trim(),design:$('fDesign').value};
     const d=await api('/api/site',{method:SITE?'PUT':'POST',body:JSON.stringify(body)});
     SITE=d.site||d;renderSite();refreshStats();await loadMenu();msg.className='msg ok';msg.textContent='تم حفظ بيانات المطعم ✓';
-  }catch(err){msg.className='msg error';msg.textContent=err.message}
+  }catch(err){msg.className='msg error';msg.textContent=err.message || 'تعذر حفظ البيانات';console.error('saveSite:',err)}
 }
 
 async function loadTables(){
