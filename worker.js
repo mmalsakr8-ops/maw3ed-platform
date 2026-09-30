@@ -297,30 +297,6 @@ async function requireUser(request, env) {
   return user;
 }
 
-async function ensureSiteColumns(env) {
-  const required = [
-    ["business_type", "TEXT DEFAULT 'restaurant'"],
-    ["cover_url", "TEXT DEFAULT ''"],
-    ["design", "TEXT DEFAULT 'default'"]
-  ];
-
-  const info = await env.DB.prepare("PRAGMA table_info(sites)").all();
-  const columns = new Set((info.results || []).map(r => r.name));
-
-  for (const [name, definition] of required) {
-    if (columns.has(name)) continue;
-    try {
-      await env.DB.prepare(`ALTER TABLE sites ADD COLUMN ${name} ${definition}`).run();
-    } catch (error) {
-      // Another request may have added the column at the same time.
-      // Re-check before failing the API request.
-      const check = await env.DB.prepare("PRAGMA table_info(sites)").all();
-      const names = new Set((check.results || []).map(r => r.name));
-      if (!names.has(name)) throw error;
-    }
-  }
-}
-
 async function getSiteForUser(env, userId) {
   return await env.DB
     .prepare("SELECT * FROM sites WHERE user_id = ? LIMIT 1")
@@ -357,7 +333,6 @@ function publicSiteData(site) {
     address: site.address,
     working_hours: site.working_hours,
     description: site.description,
-    business_type: site.business_type || "restaurant",
     logo_url: site.logo_url,
     cover_url: site.cover_url,
     design: site.design,
@@ -620,6 +595,14 @@ async function me(request, env) {
           name: site.name,
           slug: site.slug,
           status: site.status,
+          business_type: site.business_type || "restaurant",
+          phone: site.phone || "",
+          address: site.address || "",
+          working_hours: site.working_hours || "",
+          description: site.description || "",
+          logo_url: site.logo_url || "",
+          cover_url: site.cover_url || "",
+          design: site.design || "default",
           subscription_type: site.subscription_type,
           subscription_ends_at: site.subscription_ends_at,
           trial_ends_at: site.trial_ends_at,
@@ -634,7 +617,29 @@ async function me(request, env) {
    SITE
 ========================= */
 
+async function ensureSiteColumns(env) {
+  const required = [
+    ["business_type", "TEXT DEFAULT 'restaurant'"],
+    ["cover_url", "TEXT DEFAULT ''"],
+    ["design", "TEXT DEFAULT 'default'"]
+  ];
+  const info = await env.DB.prepare("PRAGMA table_info(sites)").all();
+  const columns = new Set((info.results || []).map(r => r.name));
+  for (const [name, definition] of required) {
+    if (columns.has(name)) continue;
+    try {
+      await env.DB.prepare(`ALTER TABLE sites ADD COLUMN ${name} ${definition}`).run();
+    } catch (error) {
+      const check = await env.DB.prepare("PRAGMA table_info(sites)").all();
+      const names = new Set((check.results || []).map(r => r.name));
+      if (!names.has(name)) throw error;
+    }
+  }
+}
+
 async function siteAPI(request, env, user) {
+  await ensureSiteColumns(env);
+
   if (request.method === "GET") {
     const site = await getSiteForUser(env, user.id);
 
@@ -681,11 +686,11 @@ async function siteAPI(request, env, user) {
           user_id,
           name,
           slug,
+          business_type,
           phone,
           address,
           working_hours,
           description,
-          business_type,
           logo_url,
           cover_url,
           design,
@@ -705,11 +710,11 @@ async function siteAPI(request, env, user) {
         user.id,
         name,
         slug,
+        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : "restaurant",
         String(data.phone || user.phone || ""),
         String(data.address || ""),
         String(data.working_hours || ""),
         String(data.description || ""),
-        String(data.business_type || "restaurant"),
         String(data.logo_url || ""),
         String(data.cover_url || ""),
         String(data.design || "default"),
@@ -761,11 +766,11 @@ async function siteAPI(request, env, user) {
         SET
           name = ?,
           slug = ?,
+          business_type = ?,
           phone = ?,
           address = ?,
           working_hours = ?,
           description = ?,
-          business_type = ?,
           logo_url = ?,
           cover_url = ?,
           design = ?,
@@ -775,6 +780,7 @@ async function siteAPI(request, env, user) {
       .bind(
         name,
         slug,
+        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
         data.phone !== undefined
           ? String(data.phone)
           : site.phone,
@@ -787,9 +793,6 @@ async function siteAPI(request, env, user) {
         data.description !== undefined
           ? String(data.description)
           : site.description,
-        data.business_type !== undefined
-          ? String(data.business_type)
-          : (site.business_type || "restaurant"),
         data.logo_url !== undefined
           ? String(data.logo_url)
           : site.logo_url,
@@ -2315,6 +2318,7 @@ button{cursor:pointer}
 .actions{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.action{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:var(--shadow)}.action:hover{transform:translateY(-1px)}.action .ico{font-size:26px;display:block;margin-bottom:12px}.action b{display:block}.action small{display:block;color:var(--muted);line-height:1.6;margin-top:4px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}.card h3{margin:0 0 6px;font-size:18px}.muted{color:var(--muted);line-height:1.8;font-size:13px}
 .form{display:grid;gap:10px;margin-top:15px}.form input,.form textarea,.form select{width:100%;border:1px solid #ded5c9;background:#fff;border-radius:13px;padding:12px 13px;outline:none}.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.1)}.form textarea{min-height:90px;resize:vertical}.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:3px 2px}.check input{width:auto}.msg{min-height:22px;margin-top:8px;font-size:13px}.msg.error{color:var(--danger)}.msg.ok{color:var(--ok)}
+.field-label{font-weight:800;margin-top:2px}.business-types{display:grid;grid-template-columns:1fr 1fr;gap:10px}.business-type{border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px;font-weight:800}.business-type.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,131,69,.15);background:var(--soft)}
 .sitebox{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);background:#faf7f1;border-radius:16px;padding:13px;margin-top:14px}.site-name{font-weight:900}.slug{color:var(--muted);font-size:11px;word-break:break-all;margin-top:3px}
 .empty{padding:25px 15px;text-align:center;border:1px dashed #d8cbbb;border-radius:18px;background:#fbf8f2}.empty .big{font-size:38px}.empty h3{margin:8px 0}.empty p{color:var(--muted);margin:0 0 16px;line-height:1.8}
 .list{display:grid;gap:9px;margin-top:14px}.row{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}.row-main{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.row strong{font-size:14px}.row-meta{color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px}.row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.row-actions button,.row-actions select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 9px;font-size:12px}.badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;background:#eee5d8;color:#735329}.badge.ok{background:#e3f2e9;color:var(--ok)}.badge.off{background:#f8e5e2;color:var(--danger)}
@@ -2322,7 +2326,6 @@ button{cursor:pointer}
 .drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:40;display:none}.drawer-bg.show{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;width:min(360px,88vw);background:#fffdf9;z-index:41;transform:translateX(105%);transition:.25s;padding:20px;box-shadow:-20px 0 50px rgba(0,0,0,.15);overflow:auto}.drawer.show{transform:translateX(0)}.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.drawer-head h2{margin:0;font-size:20px}.close{border:1px solid var(--line);background:#fff;border-radius:11px;width:40px;height:40px}.nav{display:grid;gap:7px}.nav a,.nav button{border:0;background:#f7f3ec;border-radius:14px;padding:14px;text-align:right;color:var(--ink);font-weight:800;text-decoration:none}.nav a:hover,.nav button:hover{background:#eee5d8}.nav .admin{background:#211d19;color:#fff}.nav .logout{margin-top:8px;background:#f9e9e7;color:var(--danger)}
 .admin{margin-top:22px}.admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.admin-badge{font-size:11px;background:#eee2d1;color:#775126;padding:7px 10px;border-radius:999px;font-weight:800}.admin-list{display:grid;gap:10px;margin-top:14px}.admin-row{border:1px solid var(--line);border-radius:16px;padding:15px}.admin-row strong{font-size:16px}.admin-meta{color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px}.admin-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.admin-controls select,.admin-controls button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 10px}.admin-controls .renew{background:var(--dark);color:#fff}.admin-controls .suspend{color:var(--danger)}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none;place-items:center;padding:16px}.modal-bg.show{display:grid}.modal{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--card);border-radius:24px;padding:20px;box-shadow:0 25px 80px rgba(0,0,0,.2)}.modal-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.modal-head h3{margin:0}.modal-close{border:0;background:#f2ede5;border-radius:11px;width:40px;height:40px}.footer{text-align:center;color:#8c8378;font-size:11px;margin-top:28px}
-.business-types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 14px}.business-type{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 8px;display:grid;gap:4px;text-align:center;cursor:pointer;color:var(--ink)}.business-type.selected{border:2px solid var(--dark);background:#f3eee6}.business-type .business-icon{font-size:22px}.business-type small{color:var(--muted);font-size:11px}.business-type-title{font-weight:800;margin-top:8px}
 @media(max-width:950px){.stats{grid-template-columns:repeat(2,1fr)}.actions{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}}
 @media(max-width:620px){.topin,.wrap{width:min(100% - 20px,1180px)}.topin{height:66px}.brand strong{font-size:18px}.hero{padding:22px;border-radius:23px}.hero h1{font-size:27px}.actions{grid-template-columns:1fr 1fr}.action{min-height:118px;padding:15px}.sitebox{align-items:flex-start;flex-direction:column}.sitebox .open,.sitebox button{width:100%}.filters{grid-template-columns:1fr}.row-main{flex-direction:column}.stats{gap:8px}.stat{padding:13px}}
 </style>
@@ -2369,13 +2372,13 @@ button{cursor:pointer}
     <div id="siteView"></div>
     <form class="form" id="siteForm" style="display:none" onsubmit="saveSite(event)">
       <input id="fName" placeholder="اسم المطعم" required>
+      <div class="field-label">نوع المكان</div>
+      <div class="business-types" id="businessTypes">
+        <button type="button" class="business-type" data-type="restaurant" onclick="selectBusinessType('restaurant')">🍽️ مطعم</button>
+        <button type="button" class="business-type" data-type="cafe" onclick="selectBusinessType('cafe')">☕ كافيه</button>
+      </div>
       <input id="fPhone" placeholder="رقم الهاتف">
       <input id="fAddress" placeholder="العنوان">
-      <div class="business-type-title">نوع المكان</div>
-      <div class="business-types" id="businessTypes">
-        <button type="button" class="business-type" data-type="restaurant" onclick="selectBusinessType('restaurant')"><span class="business-icon">🍽️</span><b>مطعم</b><small>مطعم فقط</small></button>
-        <button type="button" class="business-type" data-type="cafe" onclick="selectBusinessType('cafe')"><span class="business-icon">☕</span><b>كافيه</b><small>كافيه فقط</small></button>
-      </div>
       <input id="fHours" placeholder="مواعيد العمل">
       <textarea id="fDesc" placeholder="نبذة قصيرة عن المطعم"></textarea>
       <input id="fLogo" placeholder="رابط الشعار (اختياري)">
@@ -2523,10 +2526,10 @@ function copyUrl(){
   const u=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);
   navigator.clipboard?.writeText(u).then(()=>{$('copyBtn').textContent='تم النسخ ✓';setTimeout(()=>$('copyBtn').textContent='نسخ الرابط',1400)}).catch(()=>modal('رابط المطعم','<div style="word-break:break-all">'+esc(u)+'</div>'));
 }
-let selectedBusinessType = 'restaurant';
+let selectedBusinessType = "restaurant";
 function selectBusinessType(type){
-  selectedBusinessType = ['restaurant','cafe'].includes(type) ? type : 'restaurant';
-  document.querySelectorAll('#businessTypes .business-type').forEach(b => b.classList.toggle('selected', b.dataset.type === selectedBusinessType));
+  selectedBusinessType = ["restaurant","cafe"].includes(type) ? type : "restaurant";
+  document.querySelectorAll("#businessTypes .business-type").forEach(b => b.classList.toggle("selected", b.dataset.type === selectedBusinessType));
 }
 
 function renderSite(){
@@ -2537,7 +2540,7 @@ function renderSite(){
   }
   $('siteView').innerHTML='<div class="sitebox"><div><div class="site-name">'+esc(SITE.name)+'</div><div class="slug">/'+esc(SITE.slug)+'</div></div><button class="open" onclick="editSite()">✏️ تعديل</button></div>';
   $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
-  $('fName').value=SITE.name||'';$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';selectBusinessType(SITE.business_type||'restaurant');
+  $('fName').value=SITE.name||'';selectBusinessType(SITE.business_type||'restaurant');$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';
 }
 function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اكتب اسم المطعم واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
 function editSite(){$('siteForm').style.display='grid';$('restaurantHint').textContent='عدّل البيانات ثم اضغط حفظ.';$('restaurant').scrollIntoView({behavior:'smooth'})}
@@ -2549,7 +2552,7 @@ async function saveSite(e){
     const body={name:$('fName').value.trim(),business_type:selectedBusinessType,phone:$('fPhone').value.trim(),address:$('fAddress').value.trim(),working_hours:$('fHours').value.trim(),description:$('fDesc').value.trim(),logo_url:$('fLogo').value.trim(),cover_url:$('fCover').value.trim(),design:$('fDesign').value};
     const d=await api('/api/site',{method:SITE?'PUT':'POST',body:JSON.stringify(body)});
     SITE=d.site||d;renderSite();refreshStats();await loadMenu();msg.className='msg ok';msg.textContent='تم حفظ بيانات المطعم ✓';
-  }catch(err){msg.className='msg error';msg.textContent=err.message || 'تعذر حفظ البيانات';console.error('saveSite:',err)}
+  }catch(err){msg.className='msg error';msg.textContent=err.message}
 }
 
 async function loadTables(){
@@ -2807,11 +2810,6 @@ export default {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
-
-      // Keep the live D1 schema compatible with the current MAW3ED fields.
-      if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/restaurant/") || url.pathname.startsWith("/public-menu/")) {
-        await ensureSiteColumns(env);
-      }
 
       if (url.pathname === "/health") {
         return health(env);
