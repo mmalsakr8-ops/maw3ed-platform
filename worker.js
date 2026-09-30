@@ -737,82 +737,73 @@ async function siteAPI(request, env, user) {
   }
 
   if (request.method === "PUT") {
-    const site = await requireSite(env, user.id);
     const data = await bodyJSON(request);
+    let site = await getSiteForUser(env, user.id);
 
-    const name =
-      data.name !== undefined
-        ? String(data.name).trim()
-        : site.name;
+    // Be tolerant of a stale dashboard state: if the browser sends PUT
+    // before the site exists, create it instead of returning 404.
+    if (!site) {
+      const name = String(data.name || "").trim();
+      if (!name) return json({ error: "اسم المطعم مطلوب" }, 400);
 
-    if (!name) {
-      return json(
-        { error: "اسم المطعم مطلوب" },
-        400
-      );
-    }
+      const id = randomToken(16);
+      const slug = await uniqueSlug(env.DB, name);
+      const started = nowISO();
+      const ends = addDays(new Date(), TRIAL_DAYS);
 
-    let slug = site.slug;
-
-    if (name !== site.name) {
-      slug = await uniqueSlug(
-        env.DB,
-        name,
-        site.id
-      );
-    }
-
-    await env.DB
-      .prepare(`
-        UPDATE sites
-        SET
-          name = ?,
-          slug = ?,
-          business_type = ?,
-          phone = ?,
-          address = ?,
-          working_hours = ?,
-          description = ?,
-          logo_url = ?,
-          cover_url = ?,
-          design = ?,
-          updated_at = ?
-        WHERE id = ?
-      `)
-      .bind(
+      await env.DB.prepare(`
+        INSERT INTO sites
+        (id,user_id,name,slug,business_type,phone,address,working_hours,description,logo_url,cover_url,design,status,trial_started_at,trial_ends_at,subscription_type,subscription_ends_at,created_at,updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, 'trial', NULL, ?, ?)
+      `).bind(
+        id,
+        user.id,
         name,
         slug,
-        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
-        data.phone !== undefined
-          ? String(data.phone)
-          : site.phone,
-        data.address !== undefined
-          ? String(data.address)
-          : site.address,
-        data.working_hours !== undefined
-          ? String(data.working_hours)
-          : site.working_hours,
-        data.description !== undefined
-          ? String(data.description)
-          : site.description,
-        data.logo_url !== undefined
-          ? String(data.logo_url)
-          : site.logo_url,
-        data.cover_url !== undefined
-          ? String(data.cover_url)
-          : site.cover_url,
-        data.design !== undefined
-          ? String(data.design)
-          : site.design,
-        nowISO(),
-        site.id
-      )
-      .run();
+        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : "restaurant",
+        String(data.phone || user.phone || ""),
+        String(data.address || ""),
+        String(data.working_hours || ""),
+        String(data.description || ""),
+        String(data.logo_url || ""),
+        String(data.cover_url || ""),
+        String(data.design || "default"),
+        started,
+        ends,
+        started,
+        started
+      ).run();
 
-    return json({
-      ok: true,
-      site: await getSiteForUser(env, user.id)
-    });
+      site = await getSiteForUser(env, user.id);
+      return json({ ok: true, created: true, site: site ? publicSiteData(site) : null }, 201);
+    }
+
+    const name = data.name !== undefined ? String(data.name).trim() : site.name;
+    if (!name) return json({ error: "اسم المطعم مطلوب" }, 400);
+
+    let slug = site.slug;
+    if (name !== site.name) slug = await uniqueSlug(env.DB, name, site.id);
+
+    await env.DB.prepare(`
+      UPDATE sites
+      SET name=?, slug=?, business_type=?, phone=?, address=?, working_hours=?, description=?, logo_url=?, cover_url=?, design=?, updated_at=?
+      WHERE id=?
+    `).bind(
+      name,
+      slug,
+      ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
+      data.phone !== undefined ? String(data.phone) : (site.phone || ""),
+      data.address !== undefined ? String(data.address) : (site.address || ""),
+      data.working_hours !== undefined ? String(data.working_hours) : (site.working_hours || ""),
+      data.description !== undefined ? String(data.description) : (site.description || ""),
+      data.logo_url !== undefined ? String(data.logo_url) : (site.logo_url || ""),
+      data.cover_url !== undefined ? String(data.cover_url) : (site.cover_url || ""),
+      data.design !== undefined ? String(data.design) : (site.design || "default"),
+      nowISO(),
+      site.id
+    ).run();
+
+    return json({ ok: true, created: false, site: await getSiteForUser(env, user.id) });
   }
 
     return json(
