@@ -1470,13 +1470,6 @@ async function publicSite(env, slug) {
 ========================= */
 
 async function publicBooking(request, env, slug) {
-  if (request.method !== "POST") {
-    return json(
-      { error: "Method Not Allowed" },
-      405
-    );
-  }
-
   const site = await env.DB
     .prepare(`
       SELECT *
@@ -1499,6 +1492,23 @@ async function publicBooking(request, env, slug) {
       { error: "الحجز غير متاح حالياً" },
       403
     );
+  }
+
+  if (request.method === "GET") {
+    const tables = await env.DB.prepare(`
+      SELECT id, name, capacity, status
+      FROM restaurant_tables
+      WHERE site_id = ? AND status = 'available'
+      ORDER BY capacity ASC, created_at ASC
+    `).bind(site.id).all();
+    return json({
+      site: publicSiteData(site),
+      tables: tables.results || []
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json({ error: "Method Not Allowed" }, 405);
   }
 
   const data = await bodyJSON(request);
@@ -2753,6 +2763,19 @@ function escapeHtml(value) {
 }
 
 /* =========================
+   PUBLIC MENU / BOOKING PAGES
+========================= */
+
+function publicMenuPage(slug) {
+  const safeSlug = encodeURIComponent(slug);
+  return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>المنيو</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh;padding-bottom:30px}.hero{padding:28px 20px;background:linear-gradient(135deg,#201b16,#8a6a3b);color:#fff}.hero h1{margin:0 0 8px}.muted{opacity:.75}.content{padding:20px}.cat{margin:24px 0 10px;font-size:21px}.item{padding:15px;margin:10px 0;background:#faf8f5;border-radius:15px;display:flex;justify-content:space-between;gap:15px}.price{font-weight:800;white-space:nowrap}.btn{display:block;text-decoration:none;text-align:center;padding:14px;border-radius:14px;margin:10px 0;font-weight:800;background:#201b16;color:#fff}</style></head><body><main class="wrap"><div id="hero" class="hero"><h1>جاري التحميل...</h1></div><section id="content" class="content"><div class="muted">جاري تحميل المنيو...</div></section></main><script>const slug=${JSON.stringify(slug)};const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));async function load(){try{const r=await fetch('/api/public/menu/'+encodeURIComponent(slug));const d=await r.json();if(!r.ok)throw Error(d.error||'تعذر تحميل المنيو');document.title='منيو '+(d.site.name||'المطعم');document.getElementById('hero').innerHTML='<h1>'+esc(d.site.name||'المطعم')+'</h1><div class="muted">'+(d.site.business_type==='cafe'?'☕ كافيه':'🍽️ مطعم')+'</div>';let html='';const cats=d.categories||[],items=d.items||[];if(!items.length)html='<p class="muted">لا توجد أصناف مضافة حالياً.</p>';for(const c of cats){const rows=items.filter(i=>i.category_id===c.id);if(!rows.length)continue;html+='<h2 class="cat">'+esc(c.name)+'</h2>'+rows.map(i=>'<div class="item"><div><b>'+esc(i.name)+'</b>'+(i.description?'<div class="muted">'+esc(i.description)+'</div>':'')+'</div><div class="price">'+esc(i.price)+' ج.م</div></div>').join('')}const unc=items.filter(i=>!cats.some(c=>c.id===i.category_id));if(unc.length)html+='<h2 class="cat">أصناف أخرى</h2>'+unc.map(i=>'<div class="item"><b>'+esc(i.name)+'</b><div class="price">'+esc(i.price)+' ج.م</div></div>').join('');html+='<a class="btn" href="/book/'+encodeURIComponent(slug)+'">📅 احجز طاولة</a>';document.getElementById('content').innerHTML=html}catch(e){document.getElementById('content').innerHTML='<p style="color:#b42318">'+esc(e.message)+'</p>'}}load();</script></body></html>`);
+}
+
+function publicBookingPage(slug) {
+  return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حجز طاولة</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:620px;margin:auto;background:#fff;min-height:100vh;padding:24px 20px;box-sizing:border-box}h1{margin-top:0}.muted{color:#777}label{display:block;font-weight:700;margin:14px 0 6px}input,select,textarea{width:100%;box-sizing:border-box;padding:13px;border:1px solid #ddd;border-radius:12px;font:inherit}button,.btn{display:block;width:100%;box-sizing:border-box;border:0;text-align:center;padding:15px;border-radius:14px;margin-top:18px;font-weight:800;background:#201b16;color:#fff}.msg{margin-top:14px;padding:12px;border-radius:12px;background:#f5f5f5}.success{background:#e9f8ef;color:#17663a}</style></head><body><main class="wrap"><div id="app"><h1>📅 حجز طاولة</h1><div class="muted">جاري تحميل بيانات الحجز...</div></div></main><script>const slug=${JSON.stringify(slug)};const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));async function load(){try{const r=await fetch('/api/book/'+encodeURIComponent(slug));const d=await r.json();if(!r.ok)throw Error(d.error||'الحجز غير متاح');const s=d.site||{};document.title='حجز '+(s.name||'المطعم');const tables=d.tables||[];document.getElementById('app').innerHTML='<h1>📅 حجز '+esc(s.name||'المطعم')+'</h1><div class="muted">'+(s.business_type==='cafe'?'☕ كافيه':'🍽️ مطعم')+'</div><form id="f"><label>الاسم</label><input name="customer_name" required><label>رقم الهاتف</label><input name="customer_phone" type="tel" required><label>التاريخ</label><input name="reservation_date" type="date" required><label>الوقت</label><input name="reservation_time" type="time" required><label>عدد الأشخاص</label><input name="party_size" type="number" min="1" value="2" required><label>الطاولة</label><select name="table_id"><option value="">اختيار تلقائي</option>'+tables.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+' — '+esc(t.capacity)+' أفراد</option>').join('')+'</select><label>ملاحظات</label><textarea name="notes" rows="3"></textarea><button>تأكيد طلب الحجز</button><div id="msg"></div></form>';document.getElementById('f').onsubmit=submit}catch(e){document.getElementById('app').innerHTML='<h1>📅 الحجز</h1><div class="msg">'+esc(e.message)+'</div>'}}async function submit(ev){ev.preventDefault();const f=ev.target;const data=Object.fromEntries(new FormData(f).entries());data.party_size=Number(data.party_size);try{const r=await fetch('/api/book/'+encodeURIComponent(slug),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});const d=await r.json();const m=document.getElementById('msg');if(!r.ok)throw Error(d.error||'تعذر إرسال الحجز');m.className='msg success';m.textContent=d.message||'تم إرسال طلب الحجز بنجاح';f.reset()}catch(e){const m=document.getElementById('msg');m.className='msg';m.textContent=e.message}}load();</script></body></html>`);
+}
+
+/* =========================
    STATIC ROUTES
 ========================= */
 
@@ -2792,14 +2815,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/public-menu.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicMenuPage(decodeURIComponent(match[1]));
   }
 
   match = url.pathname.match(
@@ -2807,14 +2823,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/public-menu.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicMenuPage(decodeURIComponent(match[1]));
   }
 
   match = url.pathname.match(
@@ -2822,14 +2831,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/booking.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicBookingPage(decodeURIComponent(match[1]));
   }
 
   return env.ASSETS.fetch(request);
