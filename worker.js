@@ -2325,10 +2325,10 @@ button{cursor:pointer}
 .primary,.secondary,.open,.danger-btn,.ghost,.mini{border:0;border-radius:12px;padding:11px 15px;font-weight:800}.primary{background:#fff;color:var(--dark)}.secondary{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22)}.open{background:var(--dark);color:#fff}.danger-btn{background:#fae8e5;color:var(--danger)}.ghost{background:#f5f0e8;color:var(--ink);border:1px solid var(--line)}.mini{padding:8px 10px;background:#f4eee5;color:var(--ink);font-size:12px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}.stat span{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}.stat b{font-size:18px}.ok{color:var(--ok)}.bad{color:var(--danger)}
 .section{margin-top:18px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px}.section-title h2,.section-title h3{margin:0}.section-title p{margin:5px 0 0;color:var(--muted);font-size:12px}
-.actions{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:12px}.action{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);transition:.18s;position:relative;overflow:hidden}.action:hover{transform:translateY(-2px);border-color:#d5c2aa}.action:after{content:"›";position:absolute;left:13px;top:13px;color:#b9aa99;font-size:20px}.action .ico{font-size:29px}.action b{font-size:15px}.action small{font-size:11px}.action .ico{font-size:26px;display:block;margin-bottom:12px}.action b{display:block}.action small{display:block;color:var(--muted);line-height:1.6;margin-top:4px}
+.actions{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.action{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:var(--shadow)}.action:hover{transform:translateY(-1px)}.action .ico{font-size:26px;display:block;margin-bottom:12px}.action b{display:block}.action small{display:block;color:var(--muted);line-height:1.6;margin-top:4px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}.card h3{margin:0 0 6px;font-size:18px}.muted{color:var(--muted);line-height:1.8;font-size:13px}
 .form{display:grid;gap:10px;margin-top:15px}.form input,.form textarea,.form select{width:100%;border:1px solid #ded5c9;background:#fff;border-radius:13px;padding:12px 13px;outline:none}.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.1)}.form textarea{min-height:90px;resize:vertical}.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:3px 2px}.check input{width:auto}.msg{min-height:22px;margin-top:8px;font-size:13px}.msg.error{color:var(--danger)}.msg.ok{color:var(--ok)}
-.field-label{font-weight:800;margin-top:2px}.business-type-box{border:2px solid var(--line);border-radius:20px;padding:16px;background:linear-gradient(180deg,#fffdf9,#faf5ed);position:relative}.business-type-box.is-required{border-color:var(--accent)}.business-type-box .field-label span{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px}.business-types{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.business-type{border:2px solid var(--line);background:#fff;border-radius:16px;padding:15px 10px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:102px;transition:.18s}.business-type:hover{border-color:#ccb89f;transform:translateY(-1px)}.business-type strong{font-size:16px}.business-type small{font-size:11px;color:var(--muted);font-weight:500}.business-type.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.15);background:var(--soft)}
+.field-label{font-weight:800;margin-top:2px}.business-type-box{border:2px solid var(--line);border-radius:18px;padding:14px;background:#fffdf9}.business-type-box .field-label span{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px}.business-types{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.business-type{border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 10px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:92px}.business-type strong{font-size:16px}.business-type small{font-size:11px;color:var(--muted);font-weight:500}.business-type.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.15);background:var(--soft)}
 .sitebox{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);background:#faf7f1;border-radius:16px;padding:13px;margin-top:14px}.site-name{font-weight:900}.slug{color:var(--muted);font-size:11px;word-break:break-all;margin-top:3px}
 .empty{padding:25px 15px;text-align:center;border:1px dashed #d8cbbb;border-radius:18px;background:#fbf8f2}.empty .big{font-size:38px}.empty h3{margin:8px 0}.empty p{color:var(--muted);margin:0 0 16px;line-height:1.8}
 .list{display:grid;gap:9px;margin-top:14px}.row{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}.row-main{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.row strong{font-size:14px}.row-meta{color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px}.row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.row-actions button,.row-actions select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 9px;font-size:12px}.badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;background:#eee5d8;color:#735329}.badge.ok{background:#e3f2e9;color:var(--ok)}.badge.off{background:#f8e5e2;color:var(--danger)}
@@ -2350,7 +2350,7 @@ button{cursor:pointer}
 <section class="hero">
   <div class="eyebrow">لوحة التحكم</div>
   <h1 id="welcome">أهلاً بك 👋</h1>
-  <p id="heroDesc">إدارة مطعمك أو كافيهك، المنيو، الطاولات والحجوزات من مكان واحد.</p>
+  <p>إدارة المطعم، المنيو، الطاولات والحجوزات من مكان واحد.</p>
   <div class="hero-actions">
     <button class="primary" onclick="document.getElementById('setup').scrollIntoView({behavior:'smooth'})">ابدأ إعداد مطعمك</button>
     <button class="secondary" id="heroOpen" style="display:none" onclick="openSite()">🌐 فتح صفحة المطعم</button>
@@ -2365,25 +2365,25 @@ button{cursor:pointer}
 </section>
 
 <section class="section">
-  <div class="section-title"><div><h2>إدارة مكانك</h2><p id="quickHint">كل أدوات المطعم أو الكافيه في مكان واحد</p></div><span class="admin-badge" id="typeBadge">—</span></div>
+  <div class="section-title"><div><h2>إدارة مطعمك</h2><p>اختصارات سريعة</p></div></div>
   <div class="actions">
     <a class="action" href="#reservations"><span class="ico">📅</span><b>الحجوزات</b><small>فلترة ومتابعة وتحديث الحالة</small></a>
-    <a class="action" href="#restaurant"><span class="ico">🏪</span><b id="navBusinessLabel">المطعم</b><small>البيانات، العنوان، المواعيد والتصميم</small></a>
+    <a class="action" href="#restaurant"><span class="ico">✏️</span><b>المطعم</b><small>تعديل بيانات المطعم والرابط</small></a>
     <a class="action" href="#menu"><span class="ico">📋</span><b>المنيو</b><small>أقسام وأصناف وأسعار</small></a>
     <a class="action" href="#tables"><span class="ico">🪑</span><b>الطاولات</b><small>إضافة وتعديل وتعطيل وحذف</small></a>
-    <a class="action" href="#share"><span class="ico">🌐</span><b>صفحة المكان</b><small>فتح ونسخ رابط الحجز</small></a>
+    <a class="action" href="#share"><span class="ico">🔗</span><b>صفحة المطعم</b><small>فتح ونسخ رابط الحجز</small></a>
   </div>
 </section>
 
 <section class="section grid" id="setup">
   <div class="card" id="restaurant">
-    <h3>🏪 بيانات المكان <span style="font-size:11px;color:var(--muted);font-weight:500">MAW3ED</span></h3>
+    <h3>🏪 بيانات المطعم <span style="font-size:11px;color:var(--muted);font-weight:500">MAW3ED v2</span></h3>
     <div class="muted" id="restaurantHint">أنشئ بيانات مطعمك مرة واحدة، وبعدها تقدر تعدّلها في أي وقت.</div>
     <div id="siteView"></div>
     <form class="form" id="siteForm" style="display:none" onsubmit="saveSite(event)">
-      <input id="fName" placeholder="اسم المطعم أو الكافيه" required>
+      <input id="fName" placeholder="اسم المطعم" required>
       <div class="business-type-box">
-        <div class="field-label">🏪 نوع المكان <span>اختر نوع نشاطك: مطعم أو كافيه</span></div>
+        <div class="field-label">🏪 نوع المكان <span>اختر نوع نشاطك</span></div>
         <div class="business-types" id="businessTypes">
           <button type="button" class="business-type" data-type="restaurant" onclick="selectBusinessType('restaurant')">🍽️ <strong>مطعم</strong><small>مطعم وحجوزات طاولات</small></button>
           <button type="button" class="business-type" data-type="cafe" onclick="selectBusinessType('cafe')">☕ <strong>كافيه</strong><small>كافيه وحجوزات طاولات</small></button>
@@ -2392,7 +2392,7 @@ button{cursor:pointer}
       <input id="fPhone" placeholder="رقم الهاتف">
       <input id="fAddress" placeholder="العنوان">
       <input id="fHours" placeholder="مواعيد العمل">
-      <textarea id="fDesc" placeholder="نبذة قصيرة عن المطعم أو الكافيه"></textarea>
+      <textarea id="fDesc" placeholder="نبذة قصيرة عن المطعم"></textarea>
       <input id="fLogo" placeholder="رابط الشعار (اختياري)">
       <input id="fCover" placeholder="رابط الغلاف (اختياري)">
       <select id="fDesign"><option value="default">افتراضي</option><option value="modern">مودرن</option><option value="classic">كلاسيك</option><option value="dark">داكن</option></select>
@@ -2532,41 +2532,29 @@ async function api(url,opt={}){
 function statusText(s){return s==='active'?'يعمل':s==='suspended'?'موقوف':'غير متاح'}
 function subText(s){if(!s)return '—';return s==='trial'?'تجربة مجانية':s==='3_months'?'3 شهور':s==='1_year'?'سنة':s==='permanent'?'دائم':'—'}
 function reservationText(s){return s==='pending'?'قيد المراجعة':s==='confirmed'?'مؤكد':s==='completed'?'مكتمل':s==='cancelled'?'ملغي':s==='rejected'?'مرفوض':s||'—'}
-function openSite(){if(SITE?.slug)location.href=BASE+'/restaurant/'+encodeURIComponent(SITE.slug)}
+function openSite(){if(SITE?.slug)location.href=BASE+'/r/'+encodeURIComponent(SITE.slug)}
 function copyUrl(){
   if(!SITE?.slug)return;
-  const u=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);
+  const u=BASE+'/r/'+encodeURIComponent(SITE.slug);
   navigator.clipboard?.writeText(u).then(()=>{$('copyBtn').textContent='تم النسخ ✓';setTimeout(()=>$('copyBtn').textContent='نسخ الرابط',1400)}).catch(()=>modal('رابط المطعم','<div style="word-break:break-all">'+esc(u)+'</div>'));
 }
 let selectedBusinessType = "restaurant";
 function selectBusinessType(type){
   selectedBusinessType = ["restaurant","cafe"].includes(type) ? type : "restaurant";
   document.querySelectorAll("#businessTypes .business-type").forEach(b => b.classList.toggle("selected", b.dataset.type === selectedBusinessType));
-  updateBusinessUI();
-}
-function businessLabel(type=selectedBusinessType){return type==='cafe'?'الكافيه':'المطعم'}
-function businessIcon(type=selectedBusinessType){return type==='cafe'?'☕':'🍽️'}
-function updateBusinessUI(){
-  const label=businessLabel();
-  const icon=businessIcon();
-  if($('typeBadge'))$('typeBadge').textContent=icon+' '+label;
-  if($('navBusinessLabel'))$('navBusinessLabel').textContent=label;
-  if($('quickHint'))$('quickHint').textContent='إدارة '+label+' والمنيو والطاولات والحجوزات من مكان واحد';
-  const hint=$('restaurantHint');
-  if(hint && SITE)hint.textContent='عدّل بيانات '+label+' ثم اضغط حفظ.';
 }
 
 function renderSite(){
   if(!SITE){
-    $('siteView').innerHTML='<div class="empty"><div class="big">🏪</div><h3>لم يتم إنشاء المكان بعد</h3><p>ابدأ باختيار <strong>مطعم</strong> أو <strong>كافيه</strong>، ثم اكتب الاسم واحفظ. بعدها تقدر تضيف المنيو والطاولات وتستقبل الحجوزات.</p><button class="open" onclick="startCreate()">ابدأ إعداد المكان</button></div>';
+    $('siteView').innerHTML='<div class="empty"><div class="big">🍽️</div><h3>مطعمك لسه ما اتعملش</h3><p>ابدأ بإنشاء المطعم، وبعدها هتقدر تضيف المنيو والطاولات وتستقبل الحجوزات.</p><button class="open" onclick="startCreate()">إنشاء مطعمي الآن</button></div>';
     $('siteForm').style.display='none';$('shareName').textContent='—';$('shareUrl').textContent='لم يتم إنشاء المطعم بعد';$('copyBtn').style.display='none';$('shareOpen').style.display='none';$('heroOpen').style.display='none';
     return;
   }
   $('siteView').innerHTML='<div class="sitebox"><div><div class="site-name">'+esc(SITE.name)+'</div><div class="slug">/'+esc(SITE.slug)+'</div></div><button class="open" onclick="editSite()">✏️ تعديل</button></div>';
-  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
-  $('fName').value=SITE.name||'';selectBusinessType(SITE.business_type||'restaurant');updateBusinessUI();$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';
+  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/r/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
+  $('fName').value=SITE.name||'';selectBusinessType(SITE.business_type||'restaurant');$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';
 }
-function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اختر مطعم أو كافيه، اكتب الاسم، ثم احفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';selectBusinessType(selectedBusinessType);$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
+function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اكتب اسم المطعم واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
 function editSite(){$('siteForm').style.display='grid';$('restaurantHint').textContent='عدّل البيانات ثم اضغط حفظ.';$('restaurant').scrollIntoView({behavior:'smooth'})}
 function cancelSiteEdit(){renderSite();$('siteMsg').textContent=''}
 async function saveSite(e){
@@ -2575,7 +2563,7 @@ async function saveSite(e){
   try{
     const body={name:$('fName').value.trim(),business_type:selectedBusinessType,phone:$('fPhone').value.trim(),address:$('fAddress').value.trim(),working_hours:$('fHours').value.trim(),description:$('fDesc').value.trim(),logo_url:$('fLogo').value.trim(),cover_url:$('fCover').value.trim(),design:$('fDesign').value};
     const d=await api('/api/site',{method:SITE?'PUT':'POST',body:JSON.stringify(body)});
-    SITE=d.site||d;renderSite();refreshStats();updateBusinessUI();await loadMenu();msg.className='msg ok';msg.textContent='تم حفظ بيانات المطعم ✓';
+    SITE=d.site||d;renderSite();refreshStats();await loadMenu();msg.className='msg ok';msg.textContent='تم حفظ بيانات المطعم ✓';
   }catch(err){msg.className='msg error';msg.textContent=err.message}
 }
 
@@ -2716,7 +2704,7 @@ async function refresh(){
   try{
     const d=await api('/api/me');ME=d.user;SITE=d.site;
     $('welcome').textContent='أهلاً بك، '+(ME.name||'')+' 👋';
-    renderSite();refreshStats();updateBusinessUI();
+    renderSite();refreshStats();
     await Promise.all([loadTables(),loadMenu(),loadReservations()]);
     if(ME.role==='admin')await loadAdmin();
   }catch(err){
@@ -2729,6 +2717,39 @@ refresh();
 </script>
 </body>
 </html>`;
+}
+
+/* =========================
+   PUBLIC RESTAURANT FALLBACK
+========================= */
+
+async function publicRestaurantFallback(env, slug) {
+  try {
+    const site = await env.DB.prepare(`
+      SELECT * FROM sites WHERE slug = ? LIMIT 1
+    `).bind(slug).first();
+
+    if (!site) return json({ error: "المطعم غير موجود" }, 404);
+    if (expired(site)) {
+      return html(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(site.name || "المطعم")}</title><body style="font-family:Arial,sans-serif;background:#f7f3ed;padding:30px;text-align:center"><h2>هذا المطعم غير متاح حالياً</h2></body></html>`);
+    }
+
+    const d = publicSiteData(site);
+    const title = escapeHtml(d.name || "المطعم");
+    const desc = escapeHtml(d.description || "");
+    const address = escapeHtml(d.address || "");
+    const phone = escapeHtml(d.phone || "");
+    const logo = d.logo_url ? `<img src="${escapeHtml(d.logo_url)}" alt="${title}" style="width:92px;height:92px;object-fit:cover;border-radius:24px;border:4px solid #fff;box-shadow:0 8px 30px #0002">` : `<div style="font-size:52px">${d.business_type === "cafe" ? "☕" : "🍽️"}</div>`;
+    const cover = d.cover_url ? `<div style="height:190px;background:url('${escapeHtml(d.cover_url)}') center/cover"></div>` : `<div style="height:150px;background:linear-gradient(135deg,#222,#8a6a3b)"></div>`;
+    return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh}.cover{position:relative}.logo{position:absolute;right:24px;bottom:-46px}.content{padding:64px 22px 30px}.muted{color:#777}.btn{display:block;text-decoration:none;text-align:center;padding:15px;border-radius:14px;margin:10px 0;font-weight:800}.primary{background:#201b16;color:#fff}.secondary{background:#f0e8dc;color:#201b16}.card{background:#faf8f5;border-radius:18px;padding:18px;margin-top:18px}</style></head><body><main class="wrap"><div class="cover">${cover}<div class="logo">${logo}</div></div><section class="content"><h1>${title}</h1><div class="muted">${d.business_type === "cafe" ? "☕ كافيه" : "🍽️ مطعم"}</div>${desc ? `<p>${desc}</p>` : ""}<a class="btn primary" href="/menu/${encodeURIComponent(slug)}">📖 عرض المنيو</a><a class="btn secondary" href="/book/${encodeURIComponent(slug)}">📅 احجز طاولة</a><div class="card">${address ? `<div>📍 ${address}</div>` : ""}${phone ? `<div style="margin-top:10px">📞 ${phone}</div>` : ""}</div></section></main></body></html>`);
+  } catch (error) {
+    console.error("MAW3ED public fallback ERROR:", error);
+    return json({ error: "تعذر فتح صفحة المطعم", detail: String(error?.message || error || "Unknown error") }, 500);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
 }
 
 /* =========================
@@ -2753,14 +2774,8 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/restaurant.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    const slug = decodeURIComponent(match[1]);
+    return publicRestaurantFallback(env, slug);
   }
 
   match = url.pathname.match(
@@ -2768,14 +2783,8 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/restaurant.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    const slug = decodeURIComponent(match[1]);
+    return publicRestaurantFallback(env, slug);
   }
 
   match = url.pathname.match(
