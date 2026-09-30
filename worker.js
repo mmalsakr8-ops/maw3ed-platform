@@ -2612,7 +2612,24 @@ button{cursor:pointer}
       <div><h3>🛡️ إدارة المنصة</h3><div class="muted">إدارة المطاعم والاشتراكات وحالة كل مطعم.</div></div>
       <span class="admin-badge">SUPER ADMIN</span>
     </div>
-    <div id="adminList" class="admin-list">جاري تحميل المطاعم...</div><div class="card" style="margin-top:14px;background:#fbf8f2"><h3>💳 إعدادات العربون والحجز</h3><div class="muted">هذه الإعدادات تتحكم فيها الإدارة فقط وتظهر للزبون في صفحة الحجز.</div><form class="form" id="depositForm" onsubmit="saveDeposit(event)"><label class="check"><input id="depEnabled" type="checkbox"> طلب عربون قبل تأكيد الحجز</label><input id="depAmount" type="number" min="0" step="0.01" placeholder="مبلغ التأمين"><input id="depCurrency" placeholder="العملة — مثال: جنيه"><input id="depMethod" placeholder="طريقة التحويل — مثال: فودافون كاش / تحويل بنكي"><input id="depRecipient" placeholder="اسم المستلم"><input id="depAccount" placeholder="رقم المحفظة / الحساب"><textarea id="depInstructions" placeholder="تعليمات التحويل"></textarea><button class="open" type="submit">حفظ إعدادات العربون</button><div id="depMsg" class="msg"></div></form></div>
+
+    <div class="card" id="depositSettings" style="margin-top:14px;background:#fff8eb;border:2px solid #ead4aa">
+      <h3 style="margin-top:0">💳 إعدادات العربون</h3>
+      <div class="muted">هذه الإعدادات مركزية من Super Admin وتطبق على حجوزات جميع المطاعم. عند تفعيلها سيطلب النظام من العميل إثبات التحويل قبل إرسال طلب الحجز.</div>
+      <form class="form" id="depositForm" onsubmit="saveDeposit(event)">
+        <label class="check"><input id="depEnabled" type="checkbox"> <b>تفعيل العربون قبل تأكيد الحجز</b></label>
+        <input id="depAmount" type="number" min="0" step="0.01" placeholder="قيمة العربون — مثال: 100" required>
+        <input id="depCurrency" placeholder="العملة — مثال: جنيه مصري" value="جنيه">
+        <input id="depMethod" placeholder="طريقة التحويل — مثال: فودافون كاش / تحويل بنكي">
+        <input id="depRecipient" placeholder="اسم المستلم">
+        <input id="depAccount" placeholder="رقم المحفظة / الحساب">
+        <textarea id="depInstructions" placeholder="تعليمات التحويل للعميل"></textarea>
+        <button class="open" type="submit">💾 حفظ إعدادات العربون</button>
+        <div id="depMsg" class="msg"></div>
+      </form>
+    </div>
+
+    <div style="margin-top:18px"><h3>المطاعم والحسابات</h3><div id="adminList" class="admin-list">جاري تحميل المطاعم...</div></div>
   </div>
 </section>
 
