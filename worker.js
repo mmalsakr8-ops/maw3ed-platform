@@ -640,7 +640,8 @@ async function ensureSiteColumns(env) {
 }
 
 async function siteAPI(request, env, user) {
-  await ensureSiteColumns(env);
+  try {
+    await ensureSiteColumns(env);
 
   if (request.method === "GET") {
     const site = await getSiteForUser(env, user.id);
@@ -815,10 +816,18 @@ async function siteAPI(request, env, user) {
     });
   }
 
-  return json(
-    { error: "Method Not Allowed" },
-    405
-  );
+    return json(
+      { error: "Method Not Allowed" },
+      405
+    );
+  } catch (error) {
+    if (error instanceof Response) return error;
+    console.error("MAW3ED /api/site ERROR:", error);
+    return json({
+      error: "تعذر حفظ بيانات المطعم",
+      detail: String(error?.message || error || "Unknown error")
+    }, 500);
+  }
 }
 
 /* =========================
@@ -2162,7 +2171,16 @@ async function apiRouter(request, env) {
   }
 
   if (path === "/api/site") {
-    return siteAPI(request, env, user);
+    try {
+      return await siteAPI(request, env, user);
+    } catch (error) {
+      if (error instanceof Response) return error;
+      console.error("MAW3ED apiRouter /api/site ERROR:", error);
+      return json({
+        error: "تعذر تنفيذ طلب المطعم",
+        detail: String(error?.message || error || "Unknown error")
+      }, 500);
+    }
   }
 
   if (path === "/api/categories") {
@@ -2868,11 +2886,11 @@ export default {
       return staticRequest(request, env);
 
     } catch (error) {
-      console.error("MAW3ED ERROR:", error);
-
       if (error instanceof Response) {
         return error;
       }
+
+      console.error("MAW3ED ERROR:", error);
 
       return json(
         {
