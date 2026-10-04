@@ -1,15 +1,15 @@
 {
-  "name": "maw3ed-platform",
+  "name": "eldab3awy-ai",
   "main": "worker.js",
-  "compatibility_date": "2026-09-22",
+  "compatibility_date": "2026-09-27",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "maw3ed-db",
-      "database_id": "f8aad1bb-c725-42be-90bc-725d31a443b4"
+      "database_name": "eldab3awy-db",
+      "database_id": "d53d53ef-0499-4000-9f4a-b7a692b73477"
     }
   ],
-  "assets": {
-    "directory": "./public"
+  "secrets": {
+    "required": ["HF_TOKEN"]
   }
 }
