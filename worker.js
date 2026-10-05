@@ -1,7 +1,7 @@
 const COOKIE_NAME = "maw3ed_session";
 const SESSION_DAYS = 30;
 const TRIAL_DAYS = 14;
-const PLATFORM_FOOTER = "© 2026 MAW3ED — موعد<br>جميع الحقوق محفوظة بواسطة M/mohamed abdalaziem";
+const PLATFORM_FOOTER = "جميع الحقوق محفوظة بواسطة m/mohamed abdalaziem 2026";
 
 const enc = new TextEncoder();
 
