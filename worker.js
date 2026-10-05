@@ -2612,36 +2612,7 @@ button{cursor:pointer}
       <div><h3>🛡️ إدارة المنصة</h3><div class="muted">إدارة المطاعم والاشتراكات وحالة كل مطعم.</div></div>
       <span class="admin-badge">SUPER ADMIN</span>
     </div>
-
-    <div class="card" id="financeSection" style="margin-top:14px;background:#fff8eb;border:2px solid #ead4aa">
-      <div class="section-title" style="margin-bottom:0">
-        <div><h3 style="margin:0">💰 المالية</h3><p>إدارة العربون وإعدادات التحويل المالية لجميع المطاعم.</p></div>
-        <button class="open" type="button" onclick="toggleFinance()" id="financeToggle">فتح المالية</button>
-      </div>
-      <div id="financePanel" style="display:none;margin-top:14px">
-        <div class="card" id="depositSettings" style="background:#fff;border:1px solid #ead4aa">
-          <h3 style="margin-top:0">💳 إعدادات العربون</h3>
-          <div class="muted">هذه الإعدادات مركزية من Super Admin وتطبق على حجوزات جميع المطاعم. عند تفعيلها سيطلب النظام من العميل إثبات التحويل قبل إرسال طلب الحجز.</div>
-          <form class="form" id="depositForm" onsubmit="saveDeposit(event)">
-            <label class="check"><input id="depEnabled" type="checkbox"> <b>تفعيل العربون قبل تأكيد الحجز</b></label>
-            <input id="depAmount" type="number" min="0" step="0.01" placeholder="قيمة العربون — مثال: 100" required>
-            <input id="depCurrency" placeholder="العملة — مثال: جنيه مصري" value="جنيه">
-            <input id="depMethod" placeholder="طريقة التحويل — مثال: فودافون كاش / تحويل بنكي">
-            <input id="depRecipient" placeholder="اسم المستلم">
-            <input id="depAccount" placeholder="رقم المحفظة / الحساب">
-            <textarea id="depInstructions" placeholder="تعليمات التحويل للعميل"></textarea>
-            <button class="open" type="submit">💾 حفظ إعدادات العربون</button>
-            <div id="depMsg" class="msg"></div>
-          </form>
-        </div>
-        <div class="card" style="margin-top:12px">
-          <h3 style="margin-top:0">📊 حالة العربون</h3>
-          <div id="financeStatus" class="muted">جاري تحميل الحالة...</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:18px"><h3>المطاعم والحسابات</h3><div id="adminList" class="admin-list">جاري تحميل المطاعم...</div></div>
+    <div id="adminList" class="admin-list">جاري تحميل المطاعم...</div><div class="card" style="margin-top:14px;background:#fbf8f2"><h3>💳 إعدادات العربون والحجز</h3><div class="muted">هذه الإعدادات تتحكم فيها الإدارة فقط وتظهر للزبون في صفحة الحجز.</div><form class="form" id="depositForm" onsubmit="saveDeposit(event)"><label class="check"><input id="depEnabled" type="checkbox"> طلب عربون قبل تأكيد الحجز</label><input id="depAmount" type="number" min="0" step="0.01" placeholder="مبلغ التأمين"><input id="depCurrency" placeholder="العملة — مثال: جنيه"><input id="depMethod" placeholder="طريقة التحويل — مثال: فودافون كاش / تحويل بنكي"><input id="depRecipient" placeholder="اسم المستلم"><input id="depAccount" placeholder="رقم المحفظة / الحساب"><textarea id="depInstructions" placeholder="تعليمات التحويل"></textarea><button class="open" type="submit">حفظ إعدادات العربون</button><div id="depMsg" class="msg"></div></form></div>
   </div>
 </section>
 
@@ -2678,24 +2649,6 @@ function openDrawer(){$('drawer').classList.add('show');$('drawerBg').classList.
 function closeDrawer(){$('drawer').classList.remove('show');$('drawerBg').classList.remove('show')}
 function modal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').classList.add('show')}
 function closeModal(){$('modal').classList.remove('show')}
-function toggleFinance(){
-  const panel=$('financePanel');
-  const btn=$('financeToggle');
-  const open=panel.style.display==='none';
-  panel.style.display=open?'block':'none';
-  btn.textContent=open?'إغلاق المالية':'فتح المالية';
-  if(open){loadDeposit();loadFinanceStatus();}
-}
-async function loadFinanceStatus(){
-  try{
-    const d=await api('/api/admin/deposit-settings');
-    const s=d.settings||{};
-    const enabled=Number(s.deposit_enabled)===1;
-    $('financeStatus').innerHTML=enabled
-      ? 'العربون <b>مفعّل</b> — القيمة: <b>'+esc(s.deposit_amount||0)+' '+esc(s.deposit_currency||'')+'</b> — طريقة التحويل: <b>'+esc(s.deposit_method||'غير محددة')+'</b>'
-      : 'العربون <b>متوقف</b> — الحجوزات تعمل بدون طلب إثبات تحويل.';
-  }catch(e){$('financeStatus').textContent=e.message}
-}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function api(url,opt={}){
   const headers={...(opt.headers||{})};
@@ -2870,7 +2823,7 @@ async function loadAdmin(){
   }catch(err){$('adminList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}
 }
 async function loadDeposit(){try{const d=await api('/api/admin/deposit-settings');const s=d.settings||{};$('depEnabled').checked=Number(s.deposit_enabled)===1;$('depAmount').value=s.deposit_amount||'';$('depCurrency').value=s.deposit_currency||'جنيه';$('depMethod').value=s.deposit_method||'';$('depRecipient').value=s.deposit_recipient||'';$('depAccount').value=s.deposit_account||'';$('depInstructions').value=s.deposit_instructions||''}catch(e){$('depMsg').textContent=e.message}}
-async function saveDeposit(e){e.preventDefault();$('depMsg').className='msg';$('depMsg').textContent='جارٍ الحفظ...';try{await api('/api/admin/deposit-settings',{method:'PUT',body:JSON.stringify({deposit_enabled:$('depEnabled').checked,deposit_amount:Number($('depAmount').value||0),deposit_currency:$('depCurrency').value,deposit_method:$('depMethod').value,deposit_recipient:$('depRecipient').value,deposit_account:$('depAccount').value,deposit_instructions:$('depInstructions').value})});$('depMsg').className='msg ok';$('depMsg').textContent='تم حفظ إعدادات العربون ✓';await loadFinanceStatus()}catch(e){$('depMsg').className='msg error';$('depMsg').textContent=e.message}}
+async function saveDeposit(e){e.preventDefault();$('depMsg').className='msg';$('depMsg').textContent='جارٍ الحفظ...';try{await api('/api/admin/deposit-settings',{method:'PUT',body:JSON.stringify({deposit_enabled:$('depEnabled').checked,deposit_amount:Number($('depAmount').value||0),deposit_currency:$('depCurrency').value,deposit_method:$('depMethod').value,deposit_recipient:$('depRecipient').value,deposit_account:$('depAccount').value,deposit_instructions:$('depInstructions').value})});$('depMsg').className='msg ok';$('depMsg').textContent='تم حفظ إعدادات العربون ✓'}catch(e){$('depMsg').className='msg error';$('depMsg').textContent=e.message}}
 async function editAdminSite(id){try{const d=await api('/api/admin/site/'+encodeURIComponent(id));const s=d.site;const body='<form id="asf" class="form"><input id="asName" value="'+esc(s.name||'')+'" placeholder="اسم المكان"><select id="asType"><option value="restaurant" '+(s.business_type==='restaurant'?'selected':'')+'>مطعم</option><option value="cafe" '+(s.business_type==='cafe'?'selected':'')+'>كافيه</option></select><input id="asPhone" value="'+esc(s.phone||'')+'" placeholder="الهاتف"><input id="asAddress" value="'+esc(s.address||'')+'" placeholder="العنوان"><input id="asHours" value="'+esc(s.working_hours||'')+'" placeholder="مواعيد العمل"><textarea id="asDesc" placeholder="الوصف">'+esc(s.description||'')+'</textarea><input id="asLogo" value="'+esc(s.logo_url||'')+'" placeholder="رابط الشعار"><input id="asCover" value="'+esc(s.cover_url||'')+'" placeholder="رابط الغلاف"><button type="submit" class="open">حفظ</button></form>';modal('تعديل المكان',body);setTimeout(()=>document.getElementById('asf').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/site/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({name:asName.value,business_type:asType.value,phone:asPhone.value,address:asAddress.value,working_hours:asHours.value,description:asDesc.value,logo_url:asLogo.value,cover_url:asCover.value})});closeModal();await loadAdmin();modal('تم','تم تعديل بيانات المكان ✓')}catch(x){alert(x.message)}},0)}catch(e){modal('خطأ',esc(e.message))}}
 async function editAdminMenu(id){try{const d=await api('/api/admin/site/'+encodeURIComponent(id)+'/menu');const rows=(d.items||[]).map(i=>'<div style="border-bottom:1px solid #eee;padding:10px 0"><b>'+esc(i.name)+'</b> — '+Number(i.price||0).toFixed(2)+' جنيه<br><button onclick="adminItemEdit(\\''+esc(id)+'\\',\\''+esc(i.id)+'\\')">تعديل</button></div>').join('');modal('منيو المكان','<div class="muted">يمكنك تعديل الأصناف الحالية.</div><div style="margin-top:10px">'+(rows||'لا توجد أصناف')+'</div>');}catch(e){modal('خطأ',esc(e.message))}}
 async function adminItemEdit(siteId,itemId){try{const d=await api('/api/admin/site/'+encodeURIComponent(siteId)+'/menu');const i=(d.items||[]).find(x=>x.id===itemId);if(!i)return;modal('تعديل الصنف','<form id="aif" class="form"><input id="aiName" value="'+esc(i.name||'')+'"><input id="aiPrice" type="number" step="0.01" value="'+Number(i.price||0)+'"><textarea id="aiDesc">'+esc(i.description||'')+'</textarea><input id="aiImage" value="'+esc(i.image_url||'')+'"><label class="check"><input id="aiAvail" type="checkbox" '+(Number(i.available)?'checked':'')+'> متاح</label><button class="open">حفظ</button></form>');setTimeout(()=>document.getElementById('aif').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/site/'+encodeURIComponent(siteId)+'/menu',{method:'PUT',body:JSON.stringify({type:'item',id:itemId,name:aiName.value,price:Number(aiPrice.value||0),description:aiDesc.value,image_url:aiImage.value,available:aiAvail.checked})});await editAdminMenu(siteId)}catch(x){alert(x.message)}},0)}catch(e){modal('خطأ',esc(e.message))}}
