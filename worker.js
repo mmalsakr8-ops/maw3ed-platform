@@ -335,7 +335,6 @@ function publicSiteData(site) {
     description: site.description,
     business_type: site.business_type || "restaurant",
     logo_url: site.logo_url,
-    business_type: site.business_type || "restaurant",
     cover_url: site.cover_url,
     design: site.design,
     status: site.status,
@@ -640,7 +639,8 @@ async function ensureSiteColumns(env) {
 }
 
 async function siteAPI(request, env, user) {
-  await ensureSiteColumns(env);
+  try {
+    await ensureSiteColumns(env);
 
   if (request.method === "GET") {
     const site = await getSiteForUser(env, user.id);
@@ -737,88 +737,87 @@ async function siteAPI(request, env, user) {
   }
 
   if (request.method === "PUT") {
-    const site = await requireSite(env, user.id);
     const data = await bodyJSON(request);
+    let site = await getSiteForUser(env, user.id);
 
-    const name =
-      data.name !== undefined
-        ? String(data.name).trim()
-        : site.name;
+    // Be tolerant of a stale dashboard state: if the browser sends PUT
+    // before the site exists, create it instead of returning 404.
+    if (!site) {
+      const name = String(data.name || "").trim();
+      if (!name) return json({ error: "اسم المطعم مطلوب" }, 400);
 
-    if (!name) {
-      return json(
-        { error: "اسم المطعم مطلوب" },
-        400
-      );
-    }
+      const id = randomToken(16);
+      const slug = await uniqueSlug(env.DB, name);
+      const started = nowISO();
+      const ends = addDays(new Date(), TRIAL_DAYS);
 
-    let slug = site.slug;
-
-    if (name !== site.name) {
-      slug = await uniqueSlug(
-        env.DB,
-        name,
-        site.id
-      );
-    }
-
-    await env.DB
-      .prepare(`
-        UPDATE sites
-        SET
-          name = ?,
-          slug = ?,
-          business_type = ?,
-          phone = ?,
-          address = ?,
-          working_hours = ?,
-          description = ?,
-          logo_url = ?,
-          cover_url = ?,
-          design = ?,
-          updated_at = ?
-        WHERE id = ?
-      `)
-      .bind(
+      await env.DB.prepare(`
+        INSERT INTO sites
+        (id,user_id,name,slug,business_type,phone,address,working_hours,description,logo_url,cover_url,design,status,trial_started_at,trial_ends_at,subscription_type,subscription_ends_at,created_at,updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, 'trial', NULL, ?, ?)
+      `).bind(
+        id,
+        user.id,
         name,
         slug,
-        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
-        data.phone !== undefined
-          ? String(data.phone)
-          : site.phone,
-        data.address !== undefined
-          ? String(data.address)
-          : site.address,
-        data.working_hours !== undefined
-          ? String(data.working_hours)
-          : site.working_hours,
-        data.description !== undefined
-          ? String(data.description)
-          : site.description,
-        data.logo_url !== undefined
-          ? String(data.logo_url)
-          : site.logo_url,
-        data.cover_url !== undefined
-          ? String(data.cover_url)
-          : site.cover_url,
-        data.design !== undefined
-          ? String(data.design)
-          : site.design,
-        nowISO(),
-        site.id
-      )
-      .run();
+        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : "restaurant",
+        String(data.phone || user.phone || ""),
+        String(data.address || ""),
+        String(data.working_hours || ""),
+        String(data.description || ""),
+        String(data.logo_url || ""),
+        String(data.cover_url || ""),
+        String(data.design || "default"),
+        started,
+        ends,
+        started,
+        started
+      ).run();
 
-    return json({
-      ok: true,
-      site: await getSiteForUser(env, user.id)
-    });
+      site = await getSiteForUser(env, user.id);
+      return json({ ok: true, created: true, site: site ? publicSiteData(site) : null }, 201);
+    }
+
+    const name = data.name !== undefined ? String(data.name).trim() : site.name;
+    if (!name) return json({ error: "اسم المطعم مطلوب" }, 400);
+
+    let slug = site.slug;
+    if (name !== site.name) slug = await uniqueSlug(env.DB, name, site.id);
+
+    await env.DB.prepare(`
+      UPDATE sites
+      SET name=?, slug=?, business_type=?, phone=?, address=?, working_hours=?, description=?, logo_url=?, cover_url=?, design=?, updated_at=?
+      WHERE id=?
+    `).bind(
+      name,
+      slug,
+      ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
+      data.phone !== undefined ? String(data.phone) : (site.phone || ""),
+      data.address !== undefined ? String(data.address) : (site.address || ""),
+      data.working_hours !== undefined ? String(data.working_hours) : (site.working_hours || ""),
+      data.description !== undefined ? String(data.description) : (site.description || ""),
+      data.logo_url !== undefined ? String(data.logo_url) : (site.logo_url || ""),
+      data.cover_url !== undefined ? String(data.cover_url) : (site.cover_url || ""),
+      data.design !== undefined ? String(data.design) : (site.design || "default"),
+      nowISO(),
+      site.id
+    ).run();
+
+    return json({ ok: true, created: false, site: await getSiteForUser(env, user.id) });
   }
 
-  return json(
-    { error: "Method Not Allowed" },
-    405
-  );
+    return json(
+      { error: "Method Not Allowed" },
+      405
+    );
+  } catch (error) {
+    if (error instanceof Response) return error;
+    console.error("MAW3ED /api/site ERROR:", error);
+    return json({
+      error: "تعذر حفظ بيانات المطعم",
+      detail: String(error?.message || error || "Unknown error")
+    }, 500);
+  }
 }
 
 /* =========================
@@ -1471,13 +1470,6 @@ async function publicSite(env, slug) {
 ========================= */
 
 async function publicBooking(request, env, slug) {
-  if (request.method !== "POST") {
-    return json(
-      { error: "Method Not Allowed" },
-      405
-    );
-  }
-
   const site = await env.DB
     .prepare(`
       SELECT *
@@ -1500,6 +1492,23 @@ async function publicBooking(request, env, slug) {
       { error: "الحجز غير متاح حالياً" },
       403
     );
+  }
+
+  if (request.method === "GET") {
+    const tables = await env.DB.prepare(`
+      SELECT id, name, capacity, status
+      FROM restaurant_tables
+      WHERE site_id = ? AND status = 'available'
+      ORDER BY capacity ASC, created_at ASC
+    `).bind(site.id).all();
+    return json({
+      site: publicSiteData(site),
+      tables: tables.results || []
+    });
+  }
+
+  if (request.method !== "POST") {
+    return json({ error: "Method Not Allowed" }, 405);
   }
 
   const data = await bodyJSON(request);
@@ -2162,7 +2171,16 @@ async function apiRouter(request, env) {
   }
 
   if (path === "/api/site") {
-    return siteAPI(request, env, user);
+    try {
+      return await siteAPI(request, env, user);
+    } catch (error) {
+      if (error instanceof Response) return error;
+      console.error("MAW3ED apiRouter /api/site ERROR:", error);
+      return json({
+        error: "تعذر تنفيذ طلب المطعم",
+        detail: String(error?.message || error || "Unknown error")
+      }, 500);
+    }
   }
 
   if (path === "/api/categories") {
@@ -2524,10 +2542,10 @@ async function api(url,opt={}){
 function statusText(s){return s==='active'?'يعمل':s==='suspended'?'موقوف':'غير متاح'}
 function subText(s){if(!s)return '—';return s==='trial'?'تجربة مجانية':s==='3_months'?'3 شهور':s==='1_year'?'سنة':s==='permanent'?'دائم':'—'}
 function reservationText(s){return s==='pending'?'قيد المراجعة':s==='confirmed'?'مؤكد':s==='completed'?'مكتمل':s==='cancelled'?'ملغي':s==='rejected'?'مرفوض':s||'—'}
-function openSite(){if(SITE?.slug)location.href=BASE+'/restaurant/'+encodeURIComponent(SITE.slug)}
+function openSite(){if(SITE?.slug)location.href=BASE+'/r/'+encodeURIComponent(SITE.slug)}
 function copyUrl(){
   if(!SITE?.slug)return;
-  const u=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);
+  const u=BASE+'/r/'+encodeURIComponent(SITE.slug);
   navigator.clipboard?.writeText(u).then(()=>{$('copyBtn').textContent='تم النسخ ✓';setTimeout(()=>$('copyBtn').textContent='نسخ الرابط',1400)}).catch(()=>modal('رابط المطعم','<div style="word-break:break-all">'+esc(u)+'</div>'));
 }
 let selectedBusinessType = "restaurant";
@@ -2543,7 +2561,7 @@ function renderSite(){
     return;
   }
   $('siteView').innerHTML='<div class="sitebox"><div><div class="site-name">'+esc(SITE.name)+'</div><div class="slug">/'+esc(SITE.slug)+'</div></div><button class="open" onclick="editSite()">✏️ تعديل</button></div>';
-  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
+  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/r/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
   $('fName').value=SITE.name||'';selectBusinessType(SITE.business_type||'restaurant');$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';
 }
 function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اكتب اسم المطعم واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
@@ -2712,6 +2730,52 @@ refresh();
 }
 
 /* =========================
+   PUBLIC RESTAURANT FALLBACK
+========================= */
+
+async function publicRestaurantFallback(env, slug) {
+  try {
+    const site = await env.DB.prepare(`
+      SELECT * FROM sites WHERE slug = ? LIMIT 1
+    `).bind(slug).first();
+
+    if (!site) return json({ error: "المطعم غير موجود" }, 404);
+    if (expired(site)) {
+      return html(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(site.name || "المطعم")}</title><body style="font-family:Arial,sans-serif;background:#f7f3ed;padding:30px;text-align:center"><h2>هذا المطعم غير متاح حالياً</h2></body></html>`);
+    }
+
+    const d = publicSiteData(site);
+    const title = escapeHtml(d.name || "المطعم");
+    const desc = escapeHtml(d.description || "");
+    const address = escapeHtml(d.address || "");
+    const phone = escapeHtml(d.phone || "");
+    const logo = d.logo_url ? `<img src="${escapeHtml(d.logo_url)}" alt="${title}" style="width:92px;height:92px;object-fit:cover;border-radius:24px;border:4px solid #fff;box-shadow:0 8px 30px #0002">` : `<div style="font-size:52px">${d.business_type === "cafe" ? "☕" : "🍽️"}</div>`;
+    const cover = d.cover_url ? `<div style="height:190px;background:url('${escapeHtml(d.cover_url)}') center/cover"></div>` : `<div style="height:150px;background:linear-gradient(135deg,#222,#8a6a3b)"></div>`;
+    return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh}.cover{position:relative}.logo{position:absolute;right:24px;bottom:-46px}.content{padding:64px 22px 30px}.muted{color:#777}.btn{display:block;text-decoration:none;text-align:center;padding:15px;border-radius:14px;margin:10px 0;font-weight:800}.primary{background:#201b16;color:#fff}.secondary{background:#f0e8dc;color:#201b16}.card{background:#faf8f5;border-radius:18px;padding:18px;margin-top:18px}</style></head><body><main class="wrap"><div class="cover">${cover}<div class="logo">${logo}</div></div><section class="content"><h1>${title}</h1><div class="muted">${d.business_type === "cafe" ? "☕ كافيه" : "🍽️ مطعم"}</div>${desc ? `<p>${desc}</p>` : ""}<a class="btn primary" href="/menu/${encodeURIComponent(slug)}">📖 عرض المنيو</a><a class="btn secondary" href="/book/${encodeURIComponent(slug)}">📅 احجز طاولة</a><div class="card">${address ? `<div>📍 ${address}</div>` : ""}${phone ? `<div style="margin-top:10px">📞 ${phone}</div>` : ""}</div></section></main></body></html>`);
+  } catch (error) {
+    console.error("MAW3ED public fallback ERROR:", error);
+    return json({ error: "تعذر فتح صفحة المطعم", detail: String(error?.message || error || "Unknown error") }, 500);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+}
+
+/* =========================
+   PUBLIC MENU / BOOKING PAGES
+========================= */
+
+function publicMenuPage(slug) {
+  const safeSlug = encodeURIComponent(slug);
+  return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>المنيو</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh;padding-bottom:30px}.hero{padding:28px 20px;background:linear-gradient(135deg,#201b16,#8a6a3b);color:#fff}.hero h1{margin:0 0 8px}.muted{opacity:.75}.content{padding:20px}.cat{margin:24px 0 10px;font-size:21px}.item{padding:15px;margin:10px 0;background:#faf8f5;border-radius:15px;display:flex;justify-content:space-between;gap:15px}.price{font-weight:800;white-space:nowrap}.btn{display:block;text-decoration:none;text-align:center;padding:14px;border-radius:14px;margin:10px 0;font-weight:800;background:#201b16;color:#fff}</style></head><body><main class="wrap"><div id="hero" class="hero"><h1>جاري التحميل...</h1></div><section id="content" class="content"><div class="muted">جاري تحميل المنيو...</div></section></main><script>const slug=${JSON.stringify(slug)};const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));async function load(){try{const r=await fetch('/api/public/menu/'+encodeURIComponent(slug));const d=await r.json();if(!r.ok)throw Error(d.error||'تعذر تحميل المنيو');document.title='منيو '+(d.site.name||'المطعم');document.getElementById('hero').innerHTML='<h1>'+esc(d.site.name||'المطعم')+'</h1><div class="muted">'+(d.site.business_type==='cafe'?'☕ كافيه':'🍽️ مطعم')+'</div>';let html='';const cats=d.categories||[],items=d.items||[];if(!items.length)html='<p class="muted">لا توجد أصناف مضافة حالياً.</p>';for(const c of cats){const rows=items.filter(i=>i.category_id===c.id);if(!rows.length)continue;html+='<h2 class="cat">'+esc(c.name)+'</h2>'+rows.map(i=>'<div class="item"><div><b>'+esc(i.name)+'</b>'+(i.description?'<div class="muted">'+esc(i.description)+'</div>':'')+'</div><div class="price">'+esc(i.price)+' ج.م</div></div>').join('')}const unc=items.filter(i=>!cats.some(c=>c.id===i.category_id));if(unc.length)html+='<h2 class="cat">أصناف أخرى</h2>'+unc.map(i=>'<div class="item"><b>'+esc(i.name)+'</b><div class="price">'+esc(i.price)+' ج.م</div></div>').join('');html+='<a class="btn" href="/book/'+encodeURIComponent(slug)+'">📅 احجز طاولة</a>';document.getElementById('content').innerHTML=html}catch(e){document.getElementById('content').innerHTML='<p style="color:#b42318">'+esc(e.message)+'</p>'}}load();</script></body></html>`);
+}
+
+function publicBookingPage(slug) {
+  return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حجز طاولة</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:620px;margin:auto;background:#fff;min-height:100vh;padding:24px 20px;box-sizing:border-box}h1{margin-top:0}.muted{color:#777}label{display:block;font-weight:700;margin:14px 0 6px}input,select,textarea{width:100%;box-sizing:border-box;padding:13px;border:1px solid #ddd;border-radius:12px;font:inherit}button,.btn{display:block;width:100%;box-sizing:border-box;border:0;text-align:center;padding:15px;border-radius:14px;margin-top:18px;font-weight:800;background:#201b16;color:#fff}.msg{margin-top:14px;padding:12px;border-radius:12px;background:#f5f5f5}.success{background:#e9f8ef;color:#17663a}</style></head><body><main class="wrap"><div id="app"><h1>📅 حجز طاولة</h1><div class="muted">جاري تحميل بيانات الحجز...</div></div></main><script>const slug=${JSON.stringify(slug)};const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));async function load(){try{const r=await fetch('/api/book/'+encodeURIComponent(slug));const d=await r.json();if(!r.ok)throw Error(d.error||'الحجز غير متاح');const s=d.site||{};document.title='حجز '+(s.name||'المطعم');const tables=d.tables||[];document.getElementById('app').innerHTML='<h1>📅 حجز '+esc(s.name||'المطعم')+'</h1><div class="muted">'+(s.business_type==='cafe'?'☕ كافيه':'🍽️ مطعم')+'</div><form id="f"><label>الاسم</label><input name="customer_name" required><label>رقم الهاتف</label><input name="customer_phone" type="tel" required><label>التاريخ</label><input name="reservation_date" type="date" required><label>الوقت</label><input name="reservation_time" type="time" required><label>عدد الأشخاص</label><input name="party_size" type="number" min="1" value="2" required><label>الطاولة</label><select name="table_id"><option value="">اختيار تلقائي</option>'+tables.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+' — '+esc(t.capacity)+' أفراد</option>').join('')+'</select><label>ملاحظات</label><textarea name="notes" rows="3"></textarea><button>تأكيد طلب الحجز</button><div id="msg"></div></form>';document.getElementById('f').onsubmit=submit}catch(e){document.getElementById('app').innerHTML='<h1>📅 الحجز</h1><div class="msg">'+esc(e.message)+'</div>'}}async function submit(ev){ev.preventDefault();const f=ev.target;const data=Object.fromEntries(new FormData(f).entries());data.party_size=Number(data.party_size);try{const r=await fetch('/api/book/'+encodeURIComponent(slug),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});const d=await r.json();const m=document.getElementById('msg');if(!r.ok)throw Error(d.error||'تعذر إرسال الحجز');m.className='msg success';m.textContent=d.message||'تم إرسال طلب الحجز بنجاح';f.reset()}catch(e){const m=document.getElementById('msg');m.className='msg';m.textContent=e.message}}load();</script></body></html>`);
+}
+
+/* =========================
    STATIC ROUTES
 ========================= */
 
@@ -2733,14 +2797,8 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/restaurant.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    const slug = decodeURIComponent(match[1]);
+    return publicRestaurantFallback(env, slug);
   }
 
   match = url.pathname.match(
@@ -2748,14 +2806,8 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/restaurant.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    const slug = decodeURIComponent(match[1]);
+    return publicRestaurantFallback(env, slug);
   }
 
   match = url.pathname.match(
@@ -2763,14 +2815,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/public-menu.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicMenuPage(decodeURIComponent(match[1]));
   }
 
   match = url.pathname.match(
@@ -2778,14 +2823,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/public-menu.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicMenuPage(decodeURIComponent(match[1]));
   }
 
   match = url.pathname.match(
@@ -2793,14 +2831,7 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    url.pathname = "/booking.html";
-    url.search = `?slug=${encodeURIComponent(
-      decodeURIComponent(match[1])
-    )}`;
-
-    return env.ASSETS.fetch(
-      new Request(url.toString(), request)
-    );
+    return publicBookingPage(decodeURIComponent(match[1]));
   }
 
   return env.ASSETS.fetch(request);
@@ -2868,11 +2899,11 @@ export default {
       return staticRequest(request, env);
 
     } catch (error) {
-      console.error("MAW3ED ERROR:", error);
-
       if (error instanceof Response) {
         return error;
       }
+
+      console.error("MAW3ED ERROR:", error);
 
       return json(
         {
