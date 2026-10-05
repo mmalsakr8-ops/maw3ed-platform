@@ -1,7 +1,6 @@
 const COOKIE_NAME = "maw3ed_session";
 const SESSION_DAYS = 30;
 const TRIAL_DAYS = 14;
-const PLATFORM_FOOTER = "© 2026 MAW3ED — موعد<br>جميع الحقوق محفوظة بواسطة M/mohamed abdalaziem";
 
 const enc = new TextEncoder();
 
@@ -336,6 +335,7 @@ function publicSiteData(site) {
     description: site.description,
     business_type: site.business_type || "restaurant",
     logo_url: site.logo_url,
+    business_type: site.business_type || "restaurant",
     cover_url: site.cover_url,
     design: site.design,
     status: site.status,
@@ -667,7 +667,7 @@ async function siteAPI(request, env, user) {
 
     if (!name) {
       return json(
-        { error: "اسم المكان مطلوب" },
+        { error: "اسم المطعم مطلوب" },
         400
       );
     }
@@ -738,73 +738,82 @@ async function siteAPI(request, env, user) {
   }
 
   if (request.method === "PUT") {
+    const site = await requireSite(env, user.id);
     const data = await bodyJSON(request);
-    let site = await getSiteForUser(env, user.id);
 
-    // Be tolerant of a stale dashboard state: if the browser sends PUT
-    // before the site exists, create it instead of returning 404.
-    if (!site) {
-      const name = String(data.name || "").trim();
-      if (!name) return json({ error: "اسم المكان مطلوب" }, 400);
+    const name =
+      data.name !== undefined
+        ? String(data.name).trim()
+        : site.name;
 
-      const id = randomToken(16);
-      const slug = await uniqueSlug(env.DB, name);
-      const started = nowISO();
-      const ends = addDays(new Date(), TRIAL_DAYS);
-
-      await env.DB.prepare(`
-        INSERT INTO sites
-        (id,user_id,name,slug,business_type,phone,address,working_hours,description,logo_url,cover_url,design,status,trial_started_at,trial_ends_at,subscription_type,subscription_ends_at,created_at,updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, 'trial', NULL, ?, ?)
-      `).bind(
-        id,
-        user.id,
-        name,
-        slug,
-        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : "restaurant",
-        String(data.phone || user.phone || ""),
-        String(data.address || ""),
-        String(data.working_hours || ""),
-        String(data.description || ""),
-        String(data.logo_url || ""),
-        String(data.cover_url || ""),
-        String(data.design || "default"),
-        started,
-        ends,
-        started,
-        started
-      ).run();
-
-      site = await getSiteForUser(env, user.id);
-      return json({ ok: true, created: true, site: site ? publicSiteData(site) : null }, 201);
+    if (!name) {
+      return json(
+        { error: "اسم المطعم مطلوب" },
+        400
+      );
     }
 
-    const name = data.name !== undefined ? String(data.name).trim() : site.name;
-    if (!name) return json({ error: "اسم المكان مطلوب" }, 400);
-
     let slug = site.slug;
-    if (name !== site.name) slug = await uniqueSlug(env.DB, name, site.id);
 
-    await env.DB.prepare(`
-      UPDATE sites
-      SET name=?, slug=?, business_type=?, phone=?, address=?, working_hours=?, description=?, logo_url=?, cover_url=?, design=?, updated_at=?
-      WHERE id=?
-    `).bind(
-      name,
-      slug,
-      ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
-      data.phone !== undefined ? String(data.phone) : (site.phone || ""),
-      data.address !== undefined ? String(data.address) : (site.address || ""),
-      data.working_hours !== undefined ? String(data.working_hours) : (site.working_hours || ""),
-      data.description !== undefined ? String(data.description) : (site.description || ""),
-      data.logo_url !== undefined ? String(data.logo_url) : (site.logo_url || ""),
-      data.cover_url !== undefined ? String(data.cover_url) : (site.cover_url || ""),
-      data.design !== undefined ? String(data.design) : (site.design || "default"),
-      nowISO(),
-      site.id
-    ).run();
+    if (name !== site.name) {
+      slug = await uniqueSlug(
+        env.DB,
+        name,
+        site.id
+      );
+    }
 
-    return json({ ok: true, created: false, site: await getSiteForUser(env, user.id) });
+    await env.DB
+      .prepare(`
+        UPDATE sites
+        SET
+          name = ?,
+          slug = ?,
+          business_type = ?,
+          phone = ?,
+          address = ?,
+          working_hours = ?,
+          description = ?,
+          logo_url = ?,
+          cover_url = ?,
+          design = ?,
+          updated_at = ?
+        WHERE id = ?
+      `)
+      .bind(
+        name,
+        slug,
+        ["restaurant","cafe"].includes(data.business_type) ? data.business_type : (site.business_type || "restaurant"),
+        data.phone !== undefined
+          ? String(data.phone)
+          : site.phone,
+        data.address !== undefined
+          ? String(data.address)
+          : site.address,
+        data.working_hours !== undefined
+          ? String(data.working_hours)
+          : site.working_hours,
+        data.description !== undefined
+          ? String(data.description)
+          : site.description,
+        data.logo_url !== undefined
+          ? String(data.logo_url)
+          : site.logo_url,
+        data.cover_url !== undefined
+          ? String(data.cover_url)
+          : site.cover_url,
+        data.design !== undefined
+          ? String(data.design)
+          : site.design,
+        nowISO(),
+        site.id
+      )
+      .run();
+
+    return json({
+      ok: true,
+      site: await getSiteForUser(env, user.id)
+    });
   }
 
     return json(
@@ -1466,112 +1475,6 @@ async function publicSite(env, slug) {
   });
 }
 
-async function ensurePlatformSchema(env) {
-  await ensureSiteColumns(env);
-  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS platform_settings (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    deposit_enabled INTEGER DEFAULT 0,
-    deposit_amount REAL DEFAULT 0,
-    deposit_currency TEXT DEFAULT 'جنيه',
-    deposit_method TEXT DEFAULT 'تحويل بنكي',
-    deposit_recipient TEXT DEFAULT '',
-    deposit_account TEXT DEFAULT '',
-    deposit_instructions TEXT DEFAULT '',
-    updated_at TEXT
-  )`).run();
-  await env.DB.prepare(`INSERT OR IGNORE INTO platform_settings (id, updated_at) VALUES (1, ?)`).bind(nowISO()).run();
-  const info = await env.DB.prepare("PRAGMA table_info(reservations)").all();
-  const columns = new Set((info.results || []).map(r => r.name));
-  const required = [
-    ["deposit_required", "INTEGER DEFAULT 0"],
-    ["deposit_amount", "REAL DEFAULT 0"],
-    ["deposit_proof", "TEXT DEFAULT ''"],
-    ["deposit_status", "TEXT DEFAULT 'not_required'"]
-  ];
-  for (const [name, def] of required) {
-    if (columns.has(name)) continue;
-    try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN ${name} ${def}`).run(); }
-    catch (e) {
-      const check = await env.DB.prepare("PRAGMA table_info(reservations)").all();
-      const names = new Set((check.results || []).map(r => r.name));
-      if (!names.has(name)) throw e;
-    }
-  }
-}
-
-async function getDepositSettings(env) {
-  await ensurePlatformSchema(env);
-  return await env.DB.prepare("SELECT * FROM platform_settings WHERE id = 1").first();
-}
-
-async function adminDepositSettings(request, env) {
-  await requireAdmin(request, env);
-  await ensurePlatformSchema(env);
-  if (request.method === "GET") return json({ settings: await getDepositSettings(env) });
-  if (request.method !== "PUT") return json({ error: "Method Not Allowed" }, 405);
-  const data = await bodyJSON(request);
-  const enabled = data.deposit_enabled ? 1 : 0;
-  const amount = Math.max(0, Number(data.deposit_amount || 0));
-  await env.DB.prepare(`UPDATE platform_settings SET deposit_enabled=?, deposit_amount=?, deposit_currency=?, deposit_method=?, deposit_recipient=?, deposit_account=?, deposit_instructions=?, updated_at=? WHERE id=1`)
-    .bind(enabled, amount, String(data.deposit_currency || "جنيه"), String(data.deposit_method || "تحويل بنكي"), String(data.deposit_recipient || ""), String(data.deposit_account || ""), String(data.deposit_instructions || ""), nowISO()).run();
-  return json({ ok: true, settings: await getDepositSettings(env) });
-}
-
-async function adminSiteDetail(request, env, siteId) {
-  await requireAdmin(request, env);
-  const site = await env.DB.prepare("SELECT * FROM sites WHERE id=?").bind(siteId).first();
-  if (!site) return json({ error: "المطعم غير موجود" }, 404);
-  if (request.method === "GET") {
-    const [cats, items, tables] = await Promise.all([
-      env.DB.prepare("SELECT * FROM categories WHERE site_id=? ORDER BY sort_order, created_at").bind(siteId).all(),
-      env.DB.prepare("SELECT * FROM menu_items WHERE site_id=? ORDER BY sort_order, created_at").bind(siteId).all(),
-      env.DB.prepare("SELECT * FROM restaurant_tables WHERE site_id=? ORDER BY created_at").bind(siteId).all()
-    ]);
-    return json({ site, categories: cats.results || [], items: items.results || [], tables: tables.results || [] });
-  }
-  if (request.method === "PUT") {
-    const d = await bodyJSON(request);
-    const name = String(d.name ?? site.name).trim();
-    if (!name) return json({ error: "اسم المكان مطلوب" }, 400);
-    const slug = name !== site.name ? await uniqueSlug(env.DB, name, site.id) : site.slug;
-    const type = ["restaurant","cafe"].includes(d.business_type) ? d.business_type : (site.business_type || "restaurant");
-    await env.DB.prepare(`UPDATE sites SET name=?, slug=?, business_type=?, phone=?, address=?, working_hours=?, description=?, logo_url=?, cover_url=?, design=?, updated_at=? WHERE id=?`)
-      .bind(name, slug, type, String(d.phone ?? site.phone ?? ""), String(d.address ?? site.address ?? ""), String(d.working_hours ?? site.working_hours ?? ""), String(d.description ?? site.description ?? ""), String(d.logo_url ?? site.logo_url ?? ""), String(d.cover_url ?? site.cover_url ?? ""), String(d.design ?? site.design ?? "default"), nowISO(), siteId).run();
-    return json({ ok: true, site: await env.DB.prepare("SELECT * FROM sites WHERE id=?").bind(siteId).first() });
-  }
-  return json({ error: "Method Not Allowed" }, 405);
-}
-
-async function adminMenu(request, env, siteId) {
-  await requireAdmin(request, env);
-  const site = await env.DB.prepare("SELECT id FROM sites WHERE id=?").bind(siteId).first();
-  if (!site) return json({ error: "المكان غير موجود" }, 404);
-  if (request.method === "GET") {
-    const [c,i] = await Promise.all([
-      env.DB.prepare("SELECT * FROM categories WHERE site_id=? ORDER BY sort_order, created_at").bind(siteId).all(),
-      env.DB.prepare("SELECT * FROM menu_items WHERE site_id=? ORDER BY sort_order, created_at").bind(siteId).all()
-    ]);
-    return json({ categories:c.results||[], items:i.results||[] });
-  }
-  const d = await bodyJSON(request);
-  const type = String(d.type || "item");
-  if (type === "category") {
-    if (request.method === "POST") {
-      const id=randomToken(16); await env.DB.prepare("INSERT INTO categories (id,site_id,name,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?)").bind(id,siteId,String(d.name||"قسم"),Number(d.sort_order||0),nowISO(),nowISO()).run(); return json({ok:true,id},201);
-    }
-    if (request.method === "PUT" && d.id) { await env.DB.prepare("UPDATE categories SET name=?,updated_at=? WHERE id=? AND site_id=?").bind(String(d.name||"قسم"),nowISO(),d.id,siteId).run(); return json({ok:true}); }
-    if (request.method === "DELETE" && d.id) { await env.DB.prepare("DELETE FROM categories WHERE id=? AND site_id=?").bind(d.id,siteId).run(); return json({ok:true}); }
-  }
-  if (type === "item") {
-    if (request.method === "POST") {
-      const id=randomToken(16); await env.DB.prepare(`INSERT INTO menu_items (id,site_id,category_id,name,description,price,image_url,available,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).bind(id,siteId,d.category_id||null,String(d.name||"صنف"),String(d.description||""),Number(d.price||0),String(d.image_url||""),d.available===false?0:1,Number(d.sort_order||0),nowISO(),nowISO()).run(); return json({ok:true,id},201);
-    }
-    if (request.method === "PUT" && d.id) { await env.DB.prepare(`UPDATE menu_items SET category_id=?,name=?,description=?,price=?,image_url=?,available=?,updated_at=? WHERE id=? AND site_id=?`).bind(d.category_id||null,String(d.name||"صنف"),String(d.description||""),Number(d.price||0),String(d.image_url||""),d.available===false?0:1,nowISO(),d.id,siteId).run(); return json({ok:true}); }
-    if (request.method === "DELETE" && d.id) { await env.DB.prepare("DELETE FROM menu_items WHERE id=? AND site_id=?").bind(d.id,siteId).run(); return json({ok:true}); }
-  }
-  return json({error:"طلب المنيو غير صحيح"},400);
-}
-
 /* =========================
    PUBLIC BOOKING
 ========================= */
@@ -1608,7 +1511,6 @@ async function publicBooking(request, env, slug) {
     );
   }
 
-  const deposit = await getDepositSettings(env);
   const data = await bodyJSON(request);
 
   const customerName = String(
@@ -1641,10 +1543,17 @@ async function publicBooking(request, env, slug) {
     0
   );
 
-  const notes = String(data.notes || "").trim();
-  const depositProof = String(data.deposit_proof || "");
+  const notes = String(
+    data.notes || ""
+  ).trim();
 
-  if (!customerName || !customerPhone || !reservationDate || !reservationTime || partySize < 1) {
+  if (
+    !customerName ||
+    !customerPhone ||
+    !reservationDate ||
+    !reservationTime ||
+    partySize < 1
+  ) {
     return json(
       { error: "من فضلك أكمل بيانات الحجز" },
       400
@@ -1763,12 +1672,6 @@ async function publicBooking(request, env, slug) {
     }
   }
 
-  const depositRequired = Number(deposit?.deposit_enabled || 0) === 1;
-  if (depositRequired) {
-    if (!depositProof || !/^data:image\/(png|jpe?g|webp);base64,/i.test(depositProof)) return json({error:"صورة إثبات التحويل مطلوبة"},400);
-    if (depositProof.length > 1800000) return json({error:"صورة التحويل كبيرة جدًا، اختر صورة أصغر"},413);
-  }
-
   const reservationId = randomToken(16);
 
   await env.DB
@@ -1785,14 +1688,10 @@ async function publicBooking(request, env, slug) {
         party_size,
         notes,
         status,
-        deposit_required,
-        deposit_amount,
-        deposit_proof,
-        deposit_status,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
     `)
     .bind(
       reservationId,
@@ -1804,10 +1703,6 @@ async function publicBooking(request, env, slug) {
       reservationTime,
       partySize,
       notes,
-      depositRequired ? 1 : 0,
-      depositRequired ? Number(deposit.deposit_amount || 0) : 0,
-      depositRequired ? depositProof : "",
-      depositRequired ? "submitted" : "not_required",
       nowISO(),
       nowISO()
     )
@@ -1817,7 +1712,7 @@ async function publicBooking(request, env, slug) {
     {
       ok: true,
       reservation_id: reservationId,
-      message: depositRequired ? "تم إرسال طلب الحجز وإثبات التحويل للمراجعة" : "تم إرسال طلب الحجز بنجاح"
+      message: "تم إرسال طلب الحجز بنجاح"
     },
     201
   );
@@ -2388,20 +2283,6 @@ async function apiRouter(request, env) {
     );
   }
 
-  if (path === "/api/admin/deposit-settings") {
-    return adminDepositSettings(request, env);
-  }
-
-  match = path.match(/^\/api\/admin\/site\/([^/]+)$/);
-  if (match) {
-    return adminSiteDetail(request, env, decodeURIComponent(match[1]));
-  }
-
-  match = path.match(/^\/api\/admin\/site\/([^/]+)\/menu$/);
-  if (match) {
-    return adminMenu(request, env, decodeURIComponent(match[1]));
-  }
-
   match = path.match(
     /^\/api\/admin\/user\/([^/]+)\/status$/
   );
@@ -2479,7 +2360,7 @@ button{cursor:pointer}
 <section class="hero">
   <div class="eyebrow">لوحة التحكم</div>
   <h1 id="welcome">أهلاً بك 👋</h1>
-  <p>إدارة مطعمك أو كافيهك، المنيو، الطاولات والحجوزات من مكان واحد.</p>
+  <p>إدارة المطعم، المنيو، الطاولات والحجوزات من مكان واحد.</p>
   <div class="hero-actions">
     <button class="primary" onclick="document.getElementById('setup').scrollIntoView({behavior:'smooth'})">ابدأ إعداد مطعمك</button>
     <button class="secondary" id="heroOpen" style="display:none" onclick="openSite()">🌐 فتح صفحة المطعم</button>
@@ -2498,7 +2379,7 @@ button{cursor:pointer}
   <div class="actions">
     <a class="action" href="#reservations"><span class="ico">📅</span><b>الحجوزات</b><small>فلترة ومتابعة وتحديث الحالة</small></a>
     <a class="action" href="#restaurant"><span class="ico">✏️</span><b>المطعم</b><small>تعديل بيانات المطعم والرابط</small></a>
-    <a class="action" href="#menu"><span class="ico">📋</span><b>Menu</b><small>أقسام وأصناف وأسعار</small></a>
+    <a class="action" href="#menu"><span class="ico">📋</span><b>المنيو</b><small>أقسام وأصناف وأسعار</small></a>
     <a class="action" href="#tables"><span class="ico">🪑</span><b>الطاولات</b><small>إضافة وتعديل وتعطيل وحذف</small></a>
     <a class="action" href="#share"><span class="ico">🔗</span><b>صفحة المطعم</b><small>فتح ونسخ رابط الحجز</small></a>
   </div>
@@ -2506,11 +2387,11 @@ button{cursor:pointer}
 
 <section class="section grid" id="setup">
   <div class="card" id="restaurant">
-    <h3 id="placeDataTitle">🏪 بيانات المكان <span style="font-size:11px;color:var(--muted);font-weight:500">MAW3ED v2</span></h3>
-    <div class="muted" id="restaurantHint">أنشئ بيانات المكان مرة واحدة، وبعدها تقدر تعدّلها في أي وقت.</div>
+    <h3>🏪 بيانات المطعم <span style="font-size:11px;color:var(--muted);font-weight:500">MAW3ED v2</span></h3>
+    <div class="muted" id="restaurantHint">أنشئ بيانات مطعمك مرة واحدة، وبعدها تقدر تعدّلها في أي وقت.</div>
     <div id="siteView"></div>
     <form class="form" id="siteForm" style="display:none" onsubmit="saveSite(event)">
-      <input id="fName" placeholder="اسم المكان" required>
+      <input id="fName" placeholder="اسم المطعم" required>
       <div class="business-type-box">
         <div class="field-label">🏪 نوع المكان <span>اختر نوع نشاطك</span></div>
         <div class="business-types" id="businessTypes">
@@ -2521,7 +2402,7 @@ button{cursor:pointer}
       <input id="fPhone" placeholder="رقم الهاتف">
       <input id="fAddress" placeholder="العنوان">
       <input id="fHours" placeholder="مواعيد العمل">
-      <textarea id="fDesc" placeholder="نبذة قصيرة عن المكان"></textarea>
+      <textarea id="fDesc" placeholder="نبذة قصيرة عن المطعم"></textarea>
       <input id="fLogo" placeholder="رابط الشعار (اختياري)">
       <input id="fCover" placeholder="رابط الغلاف (اختياري)">
       <select id="fDesign"><option value="default">افتراضي</option><option value="modern">مودرن</option><option value="classic">كلاسيك</option><option value="dark">داكن</option></select>
@@ -2533,7 +2414,7 @@ button{cursor:pointer}
 
   <div class="card" id="share">
     <h3>🌐 صفحة المطعم</h3>
-    <div class="muted">هذا هو الرابط الذي سيصل إليه العملاء لمشاهدة المكان والحجز.</div>
+    <div class="muted">هذا هو الرابط الذي سيصل إليه العملاء لحجز الطاولة.</div>
     <div class="sitebox">
       <div><div class="site-name" id="shareName">—</div><div class="slug" id="shareUrl">لم يتم إنشاء المطعم بعد</div></div>
       <button class="open" id="copyBtn" style="display:none" onclick="copyUrl()">نسخ الرابط</button>
@@ -2556,7 +2437,7 @@ button{cursor:pointer}
   </div>
 
   <div class="card" id="menu">
-    <h3>📋 Menu</h3>
+    <h3>📋 إدارة المنيو</h3>
     <div class="muted">أضف الأقسام والأصناف والأسعار والصور، وحدد ما إذا كان الصنف متاحًا للعميل.</div>
 
     <form class="form" onsubmit="addCategory(event)">
@@ -2612,11 +2493,11 @@ button{cursor:pointer}
       <div><h3>🛡️ إدارة المنصة</h3><div class="muted">إدارة المطاعم والاشتراكات وحالة كل مطعم.</div></div>
       <span class="admin-badge">SUPER ADMIN</span>
     </div>
-    <div id="adminList" class="admin-list">جاري تحميل المطاعم...</div><div class="card" style="margin-top:14px;background:#fbf8f2"><h3>💳 إعدادات العربون والحجز</h3><div class="muted">هذه الإعدادات تتحكم فيها الإدارة فقط وتظهر للزبون في صفحة الحجز.</div><form class="form" id="depositForm" onsubmit="saveDeposit(event)"><label class="check"><input id="depEnabled" type="checkbox"> طلب عربون قبل تأكيد الحجز</label><input id="depAmount" type="number" min="0" step="0.01" placeholder="مبلغ التأمين"><input id="depCurrency" placeholder="العملة — مثال: جنيه"><input id="depMethod" placeholder="طريقة التحويل — مثال: فودافون كاش / تحويل بنكي"><input id="depRecipient" placeholder="اسم المستلم"><input id="depAccount" placeholder="رقم المحفظة / الحساب"><textarea id="depInstructions" placeholder="تعليمات التحويل"></textarea><button class="open" type="submit">حفظ إعدادات العربون</button><div id="depMsg" class="msg"></div></form></div>
+    <div id="adminList" class="admin-list">جاري تحميل المطاعم...</div>
   </div>
 </section>
 
-<div class="footer">${PLATFORM_FOOTER}</div>
+<div class="footer">موعد MAW3ED — إدارة المطعم والحجوزات بسهولة</div>
 </main>
 
 <div class="drawer-bg" id="drawerBg" onclick="closeDrawer()"></div>
@@ -2625,7 +2506,7 @@ button{cursor:pointer}
   <div class="nav">
     <a href="#setup" onclick="closeDrawer()">🏠 الرئيسية</a>
     <a href="#restaurant" onclick="closeDrawer()">🏪 المطعم</a>
-    <a href="#menu" onclick="closeDrawer()">📋 Menu</a>
+    <a href="#menu" onclick="closeDrawer()">📋 المنيو</a>
     <a href="#tables" onclick="closeDrawer()">🪑 الطاولات</a>
     <a href="#reservations" onclick="closeDrawer()">📅 الحجوزات</a>
     <a href="#share" onclick="closeDrawer()">🌐 صفحة المطعم</a>
@@ -2661,10 +2542,10 @@ async function api(url,opt={}){
 function statusText(s){return s==='active'?'يعمل':s==='suspended'?'موقوف':'غير متاح'}
 function subText(s){if(!s)return '—';return s==='trial'?'تجربة مجانية':s==='3_months'?'3 شهور':s==='1_year'?'سنة':s==='permanent'?'دائم':'—'}
 function reservationText(s){return s==='pending'?'قيد المراجعة':s==='confirmed'?'مؤكد':s==='completed'?'مكتمل':s==='cancelled'?'ملغي':s==='rejected'?'مرفوض':s||'—'}
-function openSite(){if(SITE?.slug)location.href=BASE+'/r/'+encodeURIComponent(SITE.slug)}
+function openSite(){if(SITE?.slug)location.href=BASE+'/restaurant/'+encodeURIComponent(SITE.slug)}
 function copyUrl(){
   if(!SITE?.slug)return;
-  const u=BASE+'/r/'+encodeURIComponent(SITE.slug);
+  const u=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);
   navigator.clipboard?.writeText(u).then(()=>{$('copyBtn').textContent='تم النسخ ✓';setTimeout(()=>$('copyBtn').textContent='نسخ الرابط',1400)}).catch(()=>modal('رابط المطعم','<div style="word-break:break-all">'+esc(u)+'</div>'));
 }
 let selectedBusinessType = "restaurant";
@@ -2675,15 +2556,15 @@ function selectBusinessType(type){
 
 function renderSite(){
   if(!SITE){
-    $('siteView').innerHTML='<div class="empty"><div class="big">🍽️</div><h3>مكانك لسه ما اتعملش</h3><p>ابدأ بإنشاء المطعم، وبعدها هتقدر تضيف المنيو والطاولات وتستقبل الحجوزات.</p><button class="open" onclick="startCreate()">إنشاء مكاني الآن</button></div>';
+    $('siteView').innerHTML='<div class="empty"><div class="big">🍽️</div><h3>مطعمك لسه ما اتعملش</h3><p>ابدأ بإنشاء المطعم، وبعدها هتقدر تضيف المنيو والطاولات وتستقبل الحجوزات.</p><button class="open" onclick="startCreate()">إنشاء مطعمي الآن</button></div>';
     $('siteForm').style.display='none';$('shareName').textContent='—';$('shareUrl').textContent='لم يتم إنشاء المطعم بعد';$('copyBtn').style.display='none';$('shareOpen').style.display='none';$('heroOpen').style.display='none';
     return;
   }
   $('siteView').innerHTML='<div class="sitebox"><div><div class="site-name">'+esc(SITE.name)+'</div><div class="slug">/'+esc(SITE.slug)+'</div></div><button class="open" onclick="editSite()">✏️ تعديل</button></div>';
-  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/r/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
+  $('siteForm').style.display='none';$('shareName').textContent=SITE.name||'—';$('shareUrl').textContent=BASE+'/restaurant/'+encodeURIComponent(SITE.slug);$('copyBtn').style.display='block';$('shareOpen').style.display='block';$('heroOpen').style.display='block';
   $('fName').value=SITE.name||'';selectBusinessType(SITE.business_type||'restaurant');$('fPhone').value=SITE.phone||'';$('fAddress').value=SITE.address||'';$('fHours').value=SITE.working_hours||'';$('fDesc').value=SITE.description||'';$('fLogo').value=SITE.logo_url||'';$('fCover').value=SITE.cover_url||'';$('fDesign').value=SITE.design||'default';
 }
-function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اكتب اسم المكان واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
+function startCreate(){$('siteForm').style.display='grid';$('restaurantHint').textContent='اكتب اسم المطعم واحفظ. سننشئ لك رابطًا خاصًا تلقائيًا.';$('fName').focus();$('restaurant').scrollIntoView({behavior:'smooth'})}
 function editSite(){$('siteForm').style.display='grid';$('restaurantHint').textContent='عدّل البيانات ثم اضغط حفظ.';$('restaurant').scrollIntoView({behavior:'smooth'})}
 function cancelSiteEdit(){renderSite();$('siteMsg').textContent=''}
 async function saveSite(e){
@@ -2791,7 +2672,7 @@ async function deleteItem(id){
 }
 
 async function loadReservations(){
-  if(!SITE){$('reservationsList').innerHTML='<div class="muted">أنشئ المكان أولًا.</div>';$('sBookings').textContent='0';return}
+  if(!SITE){$('reservationsList').innerHTML='<div class="muted">أنشئ المطعم أولًا.</div>';$('sBookings').textContent='0';return}
   try{
     const qs=new URLSearchParams();
     if($('resDate').value)qs.set('date',$('resDate').value);
@@ -2802,8 +2683,7 @@ async function loadReservations(){
     $('reservationsList').innerHTML=rows.map(r=>{
       const dt=esc(r.reservation_date||'—')+' '+esc(r.reservation_time||'');
       const badge=r.status==='confirmed'||r.status==='completed'?'ok':(r.status==='cancelled'||r.status==='rejected'?'off':'');
-      const proof=r.deposit_proof?'<button onclick="modal(\\'إثبات التحويل\\',\\'<img src=\\\"'+esc(r.deposit_proof)+'\\\" style=\\\"max-width:100%;border-radius:14px\\\">\\')">📷 إثبات التحويل</button>':'';
-      return '<div class="row"><div class="row-main"><div><strong>👤 '+esc(r.customer_name||r.name||'عميل')+'</strong><div class="row-meta">📅 '+dt+' · 🪑 '+esc(r.table_name||'بدون طاولة')+' · 👥 '+esc(r.party_size||'—')+'</div>'+(r.customer_phone?'<div class="row-meta">📞 '+esc(r.customer_phone)+'</div>':'')+'</div><span class="badge '+badge+'">'+reservationText(r.status)+'</span></div><div class="row-actions"><select onchange="changeReservation(\\''+esc(r.id)+'\\',this.value)"><option value="pending" '+(r.status==='pending'?'selected':'')+'>قيد المراجعة</option><option value="confirmed" '+(r.status==='confirmed'?'selected':'')+'>مؤكد</option><option value="completed" '+(r.status==='completed'?'selected':'')+'>مكتمل</option><option value="cancelled" '+(r.status==='cancelled'?'selected':'')+'>ملغي</option><option value="rejected" '+(r.status==='rejected'?'selected':'')+'>مرفوض</option></select>'+proof+'</div></div>';
+      return '<div class="row"><div class="row-main"><div><strong>👤 '+esc(r.customer_name||r.name||'عميل')+'</strong><div class="row-meta">📅 '+dt+' · 🪑 '+esc(r.table_name||'بدون طاولة')+' · 👥 '+esc(r.guests||r.party_size||'—')+'</div>'+(r.phone?'<div class="row-meta">📞 '+esc(r.phone)+'</div>':'')+'</div><span class="badge '+badge+'">'+reservationText(r.status)+'</span></div><div class="row-actions"><select onchange="changeReservation(\\''+esc(r.id)+'\\',this.value)"><option value="pending" '+(r.status==='pending'?'selected':'')+'>قيد المراجعة</option><option value="confirmed" '+(r.status==='confirmed'?'selected':'')+'>مؤكد</option><option value="completed" '+(r.status==='completed'?'selected':'')+'>مكتمل</option><option value="cancelled" '+(r.status==='cancelled'?'selected':'')+'>ملغي</option><option value="rejected" '+(r.status==='rejected'?'selected':'')+'>مرفوض</option></select></div></div>';
     }).join('');
   }catch(err){$('reservationsList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}
 }
@@ -2817,17 +2697,10 @@ async function loadAdmin(){
   $('adminSection').style.display='block';$('adminNav').style.display='block';
   try{
     const d=await api('/api/admin/sites');const rows=d.sites||[];
-    await loadDeposit();
-    if(!rows.length){$('adminList').innerHTML='<div class="muted">لا توجد أماكن مسجلة حتى الآن.</div>';return}
-    $('adminList').innerHTML=rows.map(s=>'<div class="admin-row"><strong>🏪 '+esc(s.name)+'</strong><div class="admin-meta">المالك: '+esc(s.owner_name||'—')+'<br>البريد: '+esc(s.owner_email||'—')+'<br>النوع: '+(s.business_type==='cafe'?'☕ كافيه':'🍽️ مطعم')+'<br>الحالة: '+esc(statusText(s.status))+' · الاشتراك: '+esc(subText(s.subscription_type))+' · الأيام: '+(s.subscription_type==='permanent'?'∞':(s.days_left??'—'))+'</div><div class="admin-controls"><select id="sub-'+esc(s.id)+'"><option value="3_months">3 شهور</option><option value="1_year">سنة</option><option value="permanent">دائم</option></select><button class="renew" onclick="renewSite(\\''+esc(s.id)+'\\')">تجديد</button><button onclick="editAdminSite(\\''+esc(s.id)+'\\')">تعديل</button><button onclick="editAdminMenu(\\''+esc(s.id)+'\\')">Menu</button><button class="suspend" onclick="toggleSite(\\''+esc(s.id)+'\\',\\''+(s.status==='active'?'suspended':'active')+'\\')">'+(s.status==='active'?'إيقاف':'تشغيل')+'</button></div></div>').join('');
+    if(!rows.length){$('adminList').innerHTML='<div class="muted">لا توجد مطاعم مسجلة حتى الآن.</div>';return}
+    $('adminList').innerHTML=rows.map(s=>'<div class="admin-row"><strong>🏪 '+esc(s.name)+'</strong><div class="admin-meta">صاحب المطعم: '+esc(s.owner_name||'—')+'<br>البريد: '+esc(s.owner_email||'—')+'<br>الحالة: '+esc(statusText(s.status))+' · الاشتراك: '+esc(subText(s.subscription_type))+' · الأيام: '+(s.subscription_type==='permanent'?'∞':(s.days_left??'—'))+'</div><div class="admin-controls"><select id="sub-'+esc(s.id)+'"><option value="3_months">3 شهور</option><option value="1_year">سنة</option><option value="permanent">دائم</option></select><button class="renew" onclick="renewSite(\\''+esc(s.id)+'\\')">تجديد</button><button class="suspend" onclick="toggleSite(\\''+esc(s.id)+'\\',\\''+(s.status==='active'?'suspended':'active')+'\\')">'+(s.status==='active'?'إيقاف':'تشغيل')+'</button></div></div>').join('');
   }catch(err){$('adminList').innerHTML='<div class="msg error">'+esc(err.message)+'</div>'}
 }
-async function loadDeposit(){try{const d=await api('/api/admin/deposit-settings');const s=d.settings||{};$('depEnabled').checked=Number(s.deposit_enabled)===1;$('depAmount').value=s.deposit_amount||'';$('depCurrency').value=s.deposit_currency||'جنيه';$('depMethod').value=s.deposit_method||'';$('depRecipient').value=s.deposit_recipient||'';$('depAccount').value=s.deposit_account||'';$('depInstructions').value=s.deposit_instructions||''}catch(e){$('depMsg').textContent=e.message}}
-async function saveDeposit(e){e.preventDefault();$('depMsg').className='msg';$('depMsg').textContent='جارٍ الحفظ...';try{await api('/api/admin/deposit-settings',{method:'PUT',body:JSON.stringify({deposit_enabled:$('depEnabled').checked,deposit_amount:Number($('depAmount').value||0),deposit_currency:$('depCurrency').value,deposit_method:$('depMethod').value,deposit_recipient:$('depRecipient').value,deposit_account:$('depAccount').value,deposit_instructions:$('depInstructions').value})});$('depMsg').className='msg ok';$('depMsg').textContent='تم حفظ إعدادات العربون ✓'}catch(e){$('depMsg').className='msg error';$('depMsg').textContent=e.message}}
-async function editAdminSite(id){try{const d=await api('/api/admin/site/'+encodeURIComponent(id));const s=d.site;const body='<form id="asf" class="form"><input id="asName" value="'+esc(s.name||'')+'" placeholder="اسم المكان"><select id="asType"><option value="restaurant" '+(s.business_type==='restaurant'?'selected':'')+'>مطعم</option><option value="cafe" '+(s.business_type==='cafe'?'selected':'')+'>كافيه</option></select><input id="asPhone" value="'+esc(s.phone||'')+'" placeholder="الهاتف"><input id="asAddress" value="'+esc(s.address||'')+'" placeholder="العنوان"><input id="asHours" value="'+esc(s.working_hours||'')+'" placeholder="مواعيد العمل"><textarea id="asDesc" placeholder="الوصف">'+esc(s.description||'')+'</textarea><input id="asLogo" value="'+esc(s.logo_url||'')+'" placeholder="رابط الشعار"><input id="asCover" value="'+esc(s.cover_url||'')+'" placeholder="رابط الغلاف"><button type="submit" class="open">حفظ</button></form>';modal('تعديل المكان',body);setTimeout(()=>document.getElementById('asf').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/site/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({name:asName.value,business_type:asType.value,phone:asPhone.value,address:asAddress.value,working_hours:asHours.value,description:asDesc.value,logo_url:asLogo.value,cover_url:asCover.value})});closeModal();await loadAdmin();modal('تم','تم تعديل بيانات المكان ✓')}catch(x){alert(x.message)}},0)}catch(e){modal('خطأ',esc(e.message))}}
-async function editAdminMenu(id){try{const d=await api('/api/admin/site/'+encodeURIComponent(id)+'/menu');const rows=(d.items||[]).map(i=>'<div style="border-bottom:1px solid #eee;padding:10px 0"><b>'+esc(i.name)+'</b> — '+Number(i.price||0).toFixed(2)+' جنيه<br><button onclick="adminItemEdit(\\''+esc(id)+'\\',\\''+esc(i.id)+'\\')">تعديل</button></div>').join('');modal('منيو المكان','<div class="muted">يمكنك تعديل الأصناف الحالية.</div><div style="margin-top:10px">'+(rows||'لا توجد أصناف')+'</div>');}catch(e){modal('خطأ',esc(e.message))}}
-async function adminItemEdit(siteId,itemId){try{const d=await api('/api/admin/site/'+encodeURIComponent(siteId)+'/menu');const i=(d.items||[]).find(x=>x.id===itemId);if(!i)return;modal('تعديل الصنف','<form id="aif" class="form"><input id="aiName" value="'+esc(i.name||'')+'"><input id="aiPrice" type="number" step="0.01" value="'+Number(i.price||0)+'"><textarea id="aiDesc">'+esc(i.description||'')+'</textarea><input id="aiImage" value="'+esc(i.image_url||'')+'"><label class="check"><input id="aiAvail" type="checkbox" '+(Number(i.available)?'checked':'')+'> متاح</label><button class="open">حفظ</button></form>');setTimeout(()=>document.getElementById('aif').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/site/'+encodeURIComponent(siteId)+'/menu',{method:'PUT',body:JSON.stringify({type:'item',id:itemId,name:aiName.value,price:Number(aiPrice.value||0),description:aiDesc.value,image_url:aiImage.value,available:aiAvail.checked})});await editAdminMenu(siteId)}catch(x){alert(x.message)}},0)}catch(e){modal('خطأ',esc(e.message))}}
-
 async function renewSite(id){try{const type=$('sub-'+id).value;await api('/api/admin/site/'+encodeURIComponent(id)+'/renew',{method:'POST',body:JSON.stringify({subscription_type:type})});await loadAdmin();modal('تم التجديد','تم تحديث اشتراك المطعم بنجاح ✓')}catch(err){modal('تعذر التجديد',esc(err.message))}}
 async function toggleSite(id,status){try{await api('/api/admin/site/'+encodeURIComponent(id)+'/status',{method:'POST',body:JSON.stringify({status})});await loadAdmin()}catch(err){modal('تعذر تغيير الحالة',esc(err.message))}}
 
@@ -2856,74 +2729,6 @@ refresh();
 </html>`;
 }
 
-function publicFooter(){ return `<footer style="text-align:center;padding:24px 16px;color:#8c8378;font-size:12px">${PLATFORM_FOOTER}</footer>`; }
-
-async function publicMenuPage(env, slug) {
-  try {
-    const site=await env.DB.prepare("SELECT * FROM sites WHERE slug=? LIMIT 1").bind(slug).first();
-    if(!site) return html("<main dir='rtl' style='font-family:Arial;padding:30px;text-align:center'><h2>المكان غير موجود</h2></main>",404);
-    if(expired(site)) return html("<main dir='rtl' style='font-family:Arial;padding:30px;text-align:center'><h2>هذا المكان غير متاح حالياً</h2></main>",403);
-    const [cats,items]=await Promise.all([
-      env.DB.prepare("SELECT * FROM categories WHERE site_id=? ORDER BY sort_order,created_at").bind(site.id).all(),
-      env.DB.prepare("SELECT * FROM menu_items WHERE site_id=? AND available=1 ORDER BY sort_order,created_at").bind(site.id).all()
-    ]);
-    const categoryMap=new Map((cats.results||[]).map(c=>[c.id,c.name]));
-    const grouped={}; for(const i of (items.results||[])){const key=i.category_id||"__general";(grouped[key]??=[]).push(i)}
-    const sections=Object.entries(grouped).map(([key,list])=>`<section style="margin-top:22px"><h2 style="font-size:20px">${escapeHtml(categoryMap.get(key)||"منيو")}</h2>${list.map(i=>`<article style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #eee;align-items:center">${i.image_url?`<img src="${escapeHtml(i.image_url)}" style="width:76px;height:76px;object-fit:cover;border-radius:16px">`:``}<div style="flex:1"><strong>${escapeHtml(i.name)}</strong>${i.description?`<div style="color:#777;font-size:13px;margin-top:5px">${escapeHtml(i.description)}</div>`:``}</div><b>${Number(i.price||0).toFixed(2)} جنيه</b></article>`).join("")}</section>`).join("");
-    const kind=site.business_type==="cafe"?"☕ كافيه":"🍽️ مطعم";
-    return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>منيو ${escapeHtml(site.name)}</title><style>body{margin:0;background:#f7f3ed;color:#211d19;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh;padding:22px;box-sizing:border-box}.btn{display:block;text-decoration:none;text-align:center;padding:14px;border-radius:14px;background:#211d19;color:#fff;font-weight:800;margin:10px 0}</style></head><body><main class="wrap"><a href="/r/${encodeURIComponent(slug)}" style="text-decoration:none;color:#777">← صفحة المكان</a><h1>منيو</h1><div style="color:#777">${kind} · ${escapeHtml(site.name)}</div>${sections||"<div style='padding:35px 0;text-align:center;color:#777'>لم تتم إضافة أصناف إلى المنيو بعد.</div>"}<a class="btn" href="/book/${encodeURIComponent(slug)}">📅 احجز طاولة</a>${publicFooter()}</main></body></html>`);
-  } catch(e){ console.error("PUBLIC MENU PAGE",e); return html("<main dir='rtl' style='font-family:Arial;padding:30px;text-align:center'><h2>تعذر فتح المنيو</h2><p>حاول مرة أخرى.</p></main>",500); }
-}
-
-async function publicBookingPage(env, slug) {
-  const site=await env.DB.prepare("SELECT * FROM sites WHERE slug=? LIMIT 1").bind(slug).first();
-  if(!site) return html("<main dir='rtl' style='font-family:Arial;padding:30px;text-align:center'><h2>المكان غير موجود</h2></main>",404);
-  if(expired(site)) return html("<main dir='rtl' style='font-family:Arial;padding:30px;text-align:center'><h2>الحجز غير متاح حالياً</h2></main>",403);
-  await ensurePlatformSchema(env); const dep=await getDepositSettings(env);
-  const tables=await env.DB.prepare("SELECT id,name,capacity FROM restaurant_tables WHERE site_id=? AND status='available' ORDER BY capacity,name").bind(site.id).all();
-  const options=(tables.results||[]).map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)} — ${escapeHtml(t.capacity)} أشخاص</option>`).join("");
-  const kind=site.business_type==="cafe"?"☕ كافيه":"🍽️ مطعم";
-  const depositHtml=Number(dep?.deposit_enabled||0)?`<div style="background:#fff8eb;border:1px solid #ead4aa;border-radius:16px;padding:15px;margin-top:12px"><b>عربون لتأكيد الحجز</b><p style="margin:8px 0;color:#6e5b40">قيمة العربون: ${Number(dep.deposit_amount||0).toFixed(2)} ${escapeHtml(dep.deposit_currency||"جنيه")}<br>طريقة التحويل: ${escapeHtml(dep.deposit_method||"")}<br>اسم المستلم: ${escapeHtml(dep.deposit_recipient||"")}<br>الحساب/الرقم: ${escapeHtml(dep.deposit_account||"")}<br>${escapeHtml(dep.deposit_instructions||"")}</p><label>صورة سكرين شوت التحويل</label><input id="proof" type="file" accept="image/png,image/jpeg,image/webp" required style="display:block;width:100%;margin-top:8px"></div>`:"";
-  return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حجز — ${escapeHtml(site.name)}</title><style>body{margin:0;background:#f7f3ed;font-family:Arial,sans-serif;color:#211d19}.wrap{max-width:620px;margin:auto;background:#fff;min-height:100vh;padding:22px;box-sizing:border-box}.form{display:grid;gap:10px;margin-top:18px}.form input,.form select,.form textarea{padding:13px;border:1px solid #ddd;border-radius:13px;font:inherit}.btn{border:0;background:#211d19;color:#fff;border-radius:14px;padding:14px;font-weight:800;font:inherit}.msg{margin-top:12px;padding:12px;border-radius:12px}.ok{background:#edf8f0;color:#24643d}.err{background:#fff0ee;color:#a52e24}</style></head><body><main class="wrap"><a href="/r/${encodeURIComponent(slug)}" style="text-decoration:none;color:#777">← ${escapeHtml(site.name)}</a><h1>حجز طاولة</h1><div style="color:#777">${kind}</div>${depositHtml}<form class="form" id="f"><input id="name" placeholder="الاسم" required><input id="phone" placeholder="رقم الهاتف" required><input id="date" type="date" required><input id="time" type="time" required><input id="guests" type="number" min="1" value="2" placeholder="عدد الأشخاص" required><select id="table"><option value="">اختيار الطاولة تلقائيًا</option>${options}</select><textarea id="notes" placeholder="ملاحظات إضافية"></textarea><button class="btn">إرسال طلب الحجز</button><div id="msg"></div></form>${publicFooter()}</main><script>
-const f=document.getElementById('f'),msg=document.getElementById('msg');
-async function proof(){const el=document.getElementById('proof');if(!el)return '';const file=el.files?.[0];if(!file)return '';if(file.size>1200000)throw Error('اختر صورة أصغر من 1.2 ميجابايت');return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
-f.addEventListener('submit',async e=>{e.preventDefault();msg.className='msg';msg.textContent='جارٍ إرسال الحجز...';try{const dateEl=document.getElementById('date'),timeEl=document.getElementById('time'),guestsEl=document.getElementById('guests'),tableEl=document.getElementById('table');const data={customer_name:document.getElementById('name').value.trim(),customer_phone:document.getElementById('phone').value.trim(),reservation_date:String(dateEl.value||''),reservation_time:String(timeEl.value||''),party_size:Number(guestsEl.value||0),table_id:tableEl.value?String(tableEl.value):null,notes:document.getElementById('notes').value.trim(),deposit_proof:await proof()};if(!/^\d{4}-\d{2}-\d{2}$/.test(data.reservation_date))throw Error('اختر تاريخ الحجز بشكل صحيح');if(!/^\d{2}:\d{2}$/.test(data.reservation_time))throw Error('اختر وقت الحجز بشكل صحيح');if(!Number.isInteger(data.party_size)||data.party_size<1)throw Error('عدد الأشخاص غير صحيح');const r=await fetch('/api/book/${encodeURIComponent(slug)}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});let d={};try{d=await r.json()}catch(_){ }if(!r.ok)throw Error(d.error||'تعذر إرسال الحجز');msg.className='msg ok';msg.textContent=d.message||'تم إرسال الحجز ✓';f.reset()}catch(x){msg.className='msg err';msg.textContent=x.message||'حدث خطأ'}});
-</script></body></html>`);
-}
-
-/* =========================
-   PUBLIC RESTAURANT FALLBACK
-========================= */
-
-async function publicRestaurantFallback(env, slug) {
-  try {
-    const site = await env.DB.prepare(`
-      SELECT * FROM sites WHERE slug = ? LIMIT 1
-    `).bind(slug).first();
-
-    if (!site) return json({ error: "المطعم غير موجود" }, 404);
-    if (expired(site)) {
-      return html(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(site.name || "المطعم")}</title><body style="font-family:Arial,sans-serif;background:#f7f3ed;padding:30px;text-align:center"><h2>هذا المطعم غير متاح حالياً</h2></body></html>`);
-    }
-
-    const d = publicSiteData(site);
-    const title = escapeHtml(d.name || "المطعم");
-    const desc = escapeHtml(d.description || "");
-    const address = escapeHtml(d.address || "");
-    const phone = escapeHtml(d.phone || "");
-    const logo = d.logo_url ? `<img src="${escapeHtml(d.logo_url)}" alt="${title}" style="width:92px;height:92px;object-fit:cover;border-radius:24px;border:4px solid #fff;box-shadow:0 8px 30px #0002">` : `<div style="font-size:52px">${d.business_type === "cafe" ? "☕" : "🍽️"}</div>`;
-    const cover = d.cover_url ? `<div style="height:190px;background:url('${escapeHtml(d.cover_url)}') center/cover"></div>` : `<div style="height:150px;background:linear-gradient(135deg,#222,#8a6a3b)"></div>`;
-    return html(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{margin:0;background:#f7f3ed;color:#201b16;font-family:Arial,sans-serif}.wrap{max-width:760px;margin:auto;background:#fff;min-height:100vh}.cover{position:relative}.logo{position:absolute;right:24px;bottom:-46px}.content{padding:64px 22px 30px}.muted{color:#777}.btn{display:block;text-decoration:none;text-align:center;padding:15px;border-radius:14px;margin:10px 0;font-weight:800}.primary{background:#201b16;color:#fff}.secondary{background:#f0e8dc;color:#201b16}.card{background:#faf8f5;border-radius:18px;padding:18px;margin-top:18px}</style></head><body><main class="wrap"><div class="cover">${cover}<div class="logo">${logo}</div></div><section class="content"><h1>${title}</h1><div class="muted">${d.business_type === "cafe" ? "☕ كافيه" : "🍽️ مطعم"}</div>${desc ? `<p>${desc}</p>` : ""}<a class="btn primary" href="/menu/${encodeURIComponent(slug)}">📖 عرض المنيو</a><a class="btn secondary" href="/book/${encodeURIComponent(slug)}">📅 احجز طاولة</a><div class="card">${address ? `<div>📍 ${address}</div>` : ""}${phone ? `<div style="margin-top:10px">📞 ${phone}</div>` : ""}</div></section>${publicFooter()}</main></body></html>`);
-  } catch (error) {
-    console.error("MAW3ED public fallback ERROR:", error);
-    return json({ error: "تعذر فتح صفحة المطعم", detail: String(error?.message || error || "Unknown error") }, 500);
-  }
-}
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
-}
-
 /* =========================
    STATIC ROUTES
 ========================= */
@@ -2946,8 +2751,14 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    const slug = decodeURIComponent(match[1]);
-    return publicRestaurantFallback(env, slug);
+    url.pathname = "/restaurant.html";
+    url.search = `?slug=${encodeURIComponent(
+      decodeURIComponent(match[1])
+    )}`;
+
+    return env.ASSETS.fetch(
+      new Request(url.toString(), request)
+    );
   }
 
   match = url.pathname.match(
@@ -2955,18 +2766,60 @@ async function staticRequest(request, env) {
   );
 
   if (match) {
-    const slug = decodeURIComponent(match[1]);
-    return publicRestaurantFallback(env, slug);
+    url.pathname = "/restaurant.html";
+    url.search = `?slug=${encodeURIComponent(
+      decodeURIComponent(match[1])
+    )}`;
+
+    return env.ASSETS.fetch(
+      new Request(url.toString(), request)
+    );
   }
 
-  match = url.pathname.match(/^\/menu\/([^/]+)$/);
-  if (match) return publicMenuPage(env, decodeURIComponent(match[1]));
+  match = url.pathname.match(
+    /^\/menu\/([^/]+)$/
+  );
 
-  match = url.pathname.match(/^\/public-menu\/([^/]+)$/);
-  if (match) return publicMenuPage(env, decodeURIComponent(match[1]));
+  if (match) {
+    url.pathname = "/public-menu.html";
+    url.search = `?slug=${encodeURIComponent(
+      decodeURIComponent(match[1])
+    )}`;
 
-  match = url.pathname.match(/^\/book\/([^/]+)$/);
-  if (match) return publicBookingPage(env, decodeURIComponent(match[1]));
+    return env.ASSETS.fetch(
+      new Request(url.toString(), request)
+    );
+  }
+
+  match = url.pathname.match(
+    /^\/public-menu\/([^/]+)$/
+  );
+
+  if (match) {
+    url.pathname = "/public-menu.html";
+    url.search = `?slug=${encodeURIComponent(
+      decodeURIComponent(match[1])
+    )}`;
+
+    return env.ASSETS.fetch(
+      new Request(url.toString(), request)
+    );
+  }
+
+  match = url.pathname.match(
+    /^\/book\/([^/]+)$/
+  );
+
+  if (match) {
+    url.pathname = "/booking.html";
+    url.search = `?slug=${encodeURIComponent(
+      decodeURIComponent(match[1])
+    )}`;
+
+    return env.ASSETS.fetch(
+      new Request(url.toString(), request)
+    );
+  }
 
   return env.ASSETS.fetch(request);
 }
@@ -2982,10 +2835,6 @@ export default {
 
       if (url.pathname === "/health") {
         return health(env);
-      }
-
-      if (url.pathname.startsWith("/api/public/site/") || url.pathname.startsWith("/api/public/menu/") || url.pathname.startsWith("/api/book/")) {
-        await ensurePlatformSchema(env);
       }
 
       if (url.pathname.startsWith("/api/public/site/")) {
