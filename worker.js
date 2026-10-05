@@ -335,7 +335,6 @@ function publicSiteData(site) {
     description: site.description,
     business_type: site.business_type || "restaurant",
     logo_url: site.logo_url,
-    business_type: site.business_type || "restaurant",
     cover_url: site.cover_url,
     design: site.design,
     status: site.status,
