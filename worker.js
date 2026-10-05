@@ -333,7 +333,9 @@ function publicSiteData(site) {
     address: site.address,
     working_hours: site.working_hours,
     description: site.description,
+    business_type: site.business_type || "restaurant",
     logo_url: site.logo_url,
+    business_type: site.business_type || "restaurant",
     cover_url: site.cover_url,
     design: site.design,
     status: site.status,
@@ -594,8 +596,8 @@ async function me(request, env) {
           id: site.id,
           name: site.name,
           slug: site.slug,
-          status: site.status,
           business_type: site.business_type || "restaurant",
+          status: site.status,
           phone: site.phone || "",
           address: site.address || "",
           working_hours: site.working_hours || "",
@@ -2318,7 +2320,7 @@ button{cursor:pointer}
 .actions{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}.action{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:var(--shadow)}.action:hover{transform:translateY(-1px)}.action .ico{font-size:26px;display:block;margin-bottom:12px}.action b{display:block}.action small{display:block;color:var(--muted);line-height:1.6;margin-top:4px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}.card h3{margin:0 0 6px;font-size:18px}.muted{color:var(--muted);line-height:1.8;font-size:13px}
 .form{display:grid;gap:10px;margin-top:15px}.form input,.form textarea,.form select{width:100%;border:1px solid #ded5c9;background:#fff;border-radius:13px;padding:12px 13px;outline:none}.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.1)}.form textarea{min-height:90px;resize:vertical}.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:3px 2px}.check input{width:auto}.msg{min-height:22px;margin-top:8px;font-size:13px}.msg.error{color:var(--danger)}.msg.ok{color:var(--ok)}
-.field-label{font-weight:800;margin-top:2px}.business-types{display:grid;grid-template-columns:1fr 1fr;gap:10px}.business-type{border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px;font-weight:800}.business-type.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,131,69,.15);background:var(--soft)}
+.field-label{font-weight:800;margin-top:2px}.business-type-box{border:2px solid var(--line);border-radius:18px;padding:14px;background:#fffdf9}.business-type-box .field-label span{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px}.business-types{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.business-type{border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 10px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:92px}.business-type strong{font-size:16px}.business-type small{font-size:11px;color:var(--muted);font-weight:500}.business-type.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(184,131,69,.15);background:var(--soft)}
 .sitebox{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);background:#faf7f1;border-radius:16px;padding:13px;margin-top:14px}.site-name{font-weight:900}.slug{color:var(--muted);font-size:11px;word-break:break-all;margin-top:3px}
 .empty{padding:25px 15px;text-align:center;border:1px dashed #d8cbbb;border-radius:18px;background:#fbf8f2}.empty .big{font-size:38px}.empty h3{margin:8px 0}.empty p{color:var(--muted);margin:0 0 16px;line-height:1.8}
 .list{display:grid;gap:9px;margin-top:14px}.row{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}.row-main{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.row strong{font-size:14px}.row-meta{color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px}.row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.row-actions button,.row-actions select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 9px;font-size:12px}.badge{display:inline-block;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;background:#eee5d8;color:#735329}.badge.ok{background:#e3f2e9;color:var(--ok)}.badge.off{background:#f8e5e2;color:var(--danger)}
@@ -2367,15 +2369,17 @@ button{cursor:pointer}
 
 <section class="section grid" id="setup">
   <div class="card" id="restaurant">
-    <h3>🏪 بيانات المطعم</h3>
+    <h3>🏪 بيانات المطعم <span style="font-size:11px;color:var(--muted);font-weight:500">MAW3ED v2</span></h3>
     <div class="muted" id="restaurantHint">أنشئ بيانات مطعمك مرة واحدة، وبعدها تقدر تعدّلها في أي وقت.</div>
     <div id="siteView"></div>
     <form class="form" id="siteForm" style="display:none" onsubmit="saveSite(event)">
       <input id="fName" placeholder="اسم المطعم" required>
-      <div class="field-label">نوع المكان</div>
-      <div class="business-types" id="businessTypes">
-        <button type="button" class="business-type" data-type="restaurant" onclick="selectBusinessType('restaurant')">🍽️ مطعم</button>
-        <button type="button" class="business-type" data-type="cafe" onclick="selectBusinessType('cafe')">☕ كافيه</button>
+      <div class="business-type-box">
+        <div class="field-label">🏪 نوع المكان <span>اختر نوع نشاطك</span></div>
+        <div class="business-types" id="businessTypes">
+          <button type="button" class="business-type" data-type="restaurant" onclick="selectBusinessType('restaurant')">🍽️ <strong>مطعم</strong><small>مطعم وحجوزات طاولات</small></button>
+          <button type="button" class="business-type" data-type="cafe" onclick="selectBusinessType('cafe')">☕ <strong>كافيه</strong><small>كافيه وحجوزات طاولات</small></button>
+        </div>
       </div>
       <input id="fPhone" placeholder="رقم الهاتف">
       <input id="fAddress" placeholder="العنوان">
